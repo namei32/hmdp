@@ -1,6 +1,7 @@
 package com.hmdp.controller;
 
 
+import cn.hutool.core.bean.BeanUtil;
 import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
@@ -80,5 +81,14 @@ public class UserController {
         info.setUpdateTime(null);
         // 返回
         return Result.ok(info);
+    }
+    @GetMapping("/{id}")
+    public Result getById(@PathVariable("id") Long id){
+        User user = userService.getById(id);
+        if(user==null){
+            return Result.ok();
+        }
+        UserDTO userDTO = BeanUtil.copyProperties(user,UserDTO.class);
+        return Result.ok(userDTO);
     }
 }

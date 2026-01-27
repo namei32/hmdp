@@ -7,6 +7,8 @@ import com.hmdp.service.IVoucherService;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>
@@ -30,6 +32,7 @@ public class VoucherController {
      */
     @PostMapping
     public Result addVoucher(@RequestBody Voucher voucher) {
+        List<List<Integer>> res=new ArrayList<>();
         voucherService.save(voucher);
         return Result.ok(voucher.getId());
     }

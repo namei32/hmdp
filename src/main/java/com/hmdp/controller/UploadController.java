@@ -14,16 +14,22 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("upload")
+@RequestMapping("/upload")
 public class UploadController {
 
-    @PostMapping("blog")
+    @PostMapping("/blog")
     public Result uploadImage(@RequestParam("file") MultipartFile image) {
+        log.warn(">>> ENTER /upload/blog, imageNull={}, contentType={}, size={}",
+                image == null,
+                image != null ? image.getContentType() : null,
+                image != null ? image.getSize() : -1);
+
         try {
             // 获取原始文件名称
             String originalFilename = image.getOriginalFilename();
             // 生成新文件名
             String fileName = createNewFileName(originalFilename);
+            log.info(new File(SystemConstants.IMAGE_UPLOAD_DIR, fileName).getAbsolutePath());
             // 保存文件
             image.transferTo(new File(SystemConstants.IMAGE_UPLOAD_DIR, fileName));
             // 返回结果

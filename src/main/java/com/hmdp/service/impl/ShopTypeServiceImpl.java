@@ -2,6 +2,7 @@ package com.hmdp.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.ShopType;
 import com.hmdp.mapper.ShopTypeMapper;
@@ -15,6 +16,7 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.hmdp.utils.RedisConstants.CACHE_NULL_TTL;
 import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TTL;
 
 /**
@@ -32,12 +34,16 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
     @Override
     public Result queryTypeList() {
         String shopTypeJson = stringRedisTemplate.opsForValue().get("shop:types");
-        if( shopTypeJson != null && ! shopTypeJson.isEmpty()) {
+        if( StringUtils.isNotBlank(shopTypeJson) ) {
             List<ShopType> shopTypeList = JSONUtil.toList(shopTypeJson, ShopType.class);
             return Result.ok(shopTypeList);
         }
+        if(shopTypeJson != null) {
+            return Result.fail("店铺不存在!");
+        }
         List<ShopType>  shopTypes = list();
         if(shopTypes == null){
+            stringRedisTemplate.opsForValue().set("shop:types", "",CACHE_NULL_TTL,TimeUnit.MINUTES);
             return Result.fail("店铺类型不存在");
         }
         String shopJson = JSONUtil.toJsonStr(shopTypes);
