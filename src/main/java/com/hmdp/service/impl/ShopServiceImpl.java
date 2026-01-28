@@ -32,7 +32,10 @@ import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
  * @since 2021-12-22
  */
 @Service
-public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
+public class
+
+
+ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource

@@ -10,6 +10,7 @@ import com.hmdp.entity.User;
 import com.hmdp.mapper.BlogMapper;
 import com.hmdp.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hmdp.service.IFollowService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
@@ -38,6 +39,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     private IUserService userService;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private IFollowService followService;
     @Override
     public Result queryHotBlog(Integer current) {
         Page<Blog> page = query()
@@ -109,5 +112,20 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         String idstr= StringUtil.join(ids, ",");
         List<UserDTO>userDTOS=userService.query().in("id",ids).last("order by field(id,"+idstr+")").list().stream().map(user -> BeanUtil.copyProperties(user, UserDTO.class)).collect(Collectors.toList());
         return Result.ok(userDTOS);
+    }
+
+    @Override
+    public Result saveBlog(Blog blog) {
+        UserDTO user=UserHolder.getUser();
+        blog.setUserId(user.getId());
+        boolean isSuccess=save(blog);
+        if(!isSuccess){
+            return Result.fail("新增笔记失败");
+        }
+        followService.query().eq("follow_user_id",user.getId()).list().forEach(follow ->{
+            String key="feed:"+follow.getUserId();
+            stringRedisTemplate.opsForZSet().add(key,blog.getId().toString(),System.currentTimeMillis());
+        });
+        return Result.ok(blog);
     }
 }
