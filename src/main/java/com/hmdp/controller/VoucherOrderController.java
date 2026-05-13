@@ -2,8 +2,8 @@ package com.hmdp.controller;
 
 
 import com.hmdp.dto.Result;
+import com.hmdp.ratelimit.annotation.RateLimit;
 import com.hmdp.service.IVoucherOrderService;
-import com.hmdp.service.IVoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,9 +23,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class VoucherOrderController {
     @Autowired
     private IVoucherOrderService voucherOrderService;
-    @PostMapping("seckill/{id}")
-    public Result seckillVoucher(@PathVariable("id") Long voucherId) {
 
+    @PostMapping("seckill/{id}")
+    @RateLimit(
+            keyPrefix = "seckill:order",
+            bucketCapacity = 40,
+            replenishRate = 20D,
+            windowSeconds = 5,
+            windowThreshold = 10,
+            blacklistThreshold = 15,
+            blacklistSeconds = 600
+    )
+    public Result seckillVoucher(@PathVariable("id") Long voucherId) {
         return voucherOrderService.addOrder(voucherId);
     }
 }

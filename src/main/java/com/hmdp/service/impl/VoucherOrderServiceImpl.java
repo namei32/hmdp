@@ -17,7 +17,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+
+import java.security.Key;
 import java.util.Collections;
+import com.hmdp.utils.RedisConstants;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <p>
@@ -53,9 +58,14 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     public Result addOrder(Long voucherId) {
         // 1. 执行 Lua 脚本，判断购买资格（库存 + 一人一单）
         Long userId = UserHolder.getUser().getId();
+        String stockKey = RedisConstants.SECKILL_STOCK_KEY + voucherId;
+        String orderKey = RedisConstants.SECKILL_ORDER_KEY + voucherId;
+        List<String> keyList = new ArrayList<>();
+        keyList.add(stockKey);
+        keyList.add(orderKey);
         long result = stringRedisTemplate.execute(
                 redisScript,
-                Collections.emptyList(),
+                keyList,
                 voucherId.toString(),
                 userId.toString());
         if (result != 0) {

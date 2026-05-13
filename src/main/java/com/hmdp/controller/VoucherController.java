@@ -3,6 +3,8 @@ package com.hmdp.controller;
 
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Voucher;
+import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.service.IShopService;
 import com.hmdp.service.IVoucherService;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +26,8 @@ public class VoucherController {
 
     @Resource
     private IVoucherService voucherService;
+    @Resource
+    private IShopService shopService;
 
     /**
      * 新增普通券
@@ -32,8 +36,17 @@ public class VoucherController {
      */
     @PostMapping
     public Result addVoucher(@RequestBody Voucher voucher) {
-        List<List<Integer>> res=new ArrayList<>();
-        voucherService.save(voucher);
+        Long shopId = voucher.getShopId();
+        if(shopId == null){
+            return Result.fail("店铺id不能为空");
+        }
+        if(shopService.getById(shopId) == null){
+            return Result.fail("店铺不存在");
+        }
+        boolean success = voucherService.save(voucher);
+        if (!success) {
+            return Result.fail("新增优惠券失败");
+        }
         return Result.ok(voucher.getId());
     }
 
@@ -44,7 +57,17 @@ public class VoucherController {
      */
     @PostMapping("seckill")
     public Result addSeckillVoucher(@RequestBody Voucher voucher) {
-        voucherService.addSeckillVoucher(voucher);
+        Long shopId = voucher.getShopId();
+        if(shopId == null){
+            return Result.fail("店铺id不能为空");
+        }
+        if(shopService.getById(shopId) == null){
+            return Result.fail("店铺不存在");
+        }
+        boolean success = voucherService.addSeckillVoucher(voucher);
+        if (!success) {
+            return Result.fail("新增秒杀优惠券失败");
+        }
         return Result.ok(voucher.getId());
     }
 

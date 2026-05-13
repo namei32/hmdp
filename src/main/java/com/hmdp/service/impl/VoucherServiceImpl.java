@@ -1,62 +1,161 @@
 package com.hmdp.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.hmdp.dto.Result;
-import com.hmdp.entity.Voucher;
-import com.hmdp.entity.VoucherOrder;
-import com.hmdp.mapper.VoucherMapper;
 import com.hmdp.entity.SeckillVoucher;
+import com.hmdp.entity.Voucher;
+import com.hmdp.mapper.VoucherMapper;
 import com.hmdp.service.ISeckillVoucherService;
-import com.hmdp.service.IVoucherOrderService;
 import com.hmdp.service.IVoucherService;
+import com.hmdp.utils.CacheClinet;
 import com.hmdp.utils.RedisConstants;
-import com.hmdp.utils.RedisIdWorker;
-import com.hmdp.utils.UserHolder;
-import org.springframework.aop.framework.AopContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 /**
- * <p>
- *  服务实现类
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
+ * Voucher service implementation.
  */
 @Service
 public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> implements IVoucherService {
     @Resource
-    private  ISeckillVoucherService seckillVoucherService;
+    private ISeckillVoucherService seckillVoucherService;
+
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
+    private CacheClinet cacheClinet;
+
+    @Resource(name = "voucherListLocalCache")
+    private Cache<Long, List<Voucher>> voucherListLocalCache;
+
+    @Override
+    public boolean save(Voucher voucher) {
+        boolean saved = super.save(voucher);
+        if (saved) {
+            handleVoucherListCacheEvict(voucher.getShopId());
+        }
+        return saved;
+    }
+
     @Override
     public Result queryVoucherOfShop(Long shopId) {
-        // 查询优惠券信息
-        List<Voucher> vouchers = getBaseMapper().queryVoucherOfShop(shopId);
-        // 返回结果
+        if (shopId == null || shopId <= 0) {
+            return Result.fail("shopId is invalid");
+        }
+
+        List<Voucher> local = voucherListLocalCache.getIfPresent(shopId);
+        if (local != null) {
+            return Result.ok(local);
+        }
+
+        long ttlMinutes = RedisConstants.CACHE_VOUCHER_LIST_TTL
+                + ThreadLocalRandom.current().nextLong(0, RedisConstants.CACHE_VOUCHER_LIST_TTL_JITTER + 1);
+        List<Voucher> vouchers = cacheClinet.queryWithPassThroughList(
+                RedisConstants.CACHE_VOUCHER_LIST_KEY,
+                shopId,
+                Voucher.class,
+                baseMapper::queryVoucherOfShop,
+                ttlMinutes,
+                TimeUnit.MINUTES
+        );
+
+        if (vouchers == null) {
+            vouchers = Collections.emptyList();
+        }
+        voucherListLocalCache.put(shopId, vouchers);
+
+
         return Result.ok(vouchers);
     }
 
     @Override
     @Transactional
-    public void addSeckillVoucher(Voucher voucher) {
-        // 保存优惠券
-        save(voucher);
-        // 保存秒杀信息
+    public boolean addSeckillVoucher(Voucher voucher) {
+        // Validate input early so the transaction can roll back on failure.
+        if (voucher == null) {
+            throw new RuntimeException("voucher must not be null");
+        }
+
+        Integer stock = voucher.getStock();
+        LocalDateTime beginTime = voucher.getBeginTime();
+        LocalDateTime endTime = voucher.getEndTime();
+
+        if (stock == null || stock <= 0 || beginTime == null || endTime == null || endTime.isBefore(beginTime)) {
+            throw new RuntimeException("invalid seckill voucher arguments");
+        }
+
+        boolean voucherSaved = save(voucher);
+        if (!voucherSaved) {
+            throw new RuntimeException("voucher save failed");
+        }
+
         SeckillVoucher seckillVoucher = new SeckillVoucher();
         seckillVoucher.setVoucherId(voucher.getId());
-        seckillVoucher.setStock(voucher.getStock());
-        seckillVoucher.setBeginTime(voucher.getBeginTime());
-        seckillVoucher.setEndTime(voucher.getEndTime());
-        seckillVoucherService.save(seckillVoucher);
+        seckillVoucher.setStock(stock);
+        seckillVoucher.setBeginTime(beginTime);
+        seckillVoucher.setEndTime(endTime);
+        boolean seckillSaved = seckillVoucherService.save(seckillVoucher);
+        if (!seckillSaved) {
+            throw new RuntimeException("seckill voucher save failed");
+        }
 
-        stringRedisTemplate.opsForValue().set(RedisConstants.SECKILL_STOCK_KEY +voucher.getId(),voucher.getStock().toString());
+        // Update cache only after the database transaction commits.
+        handleRedisStockWarmup(voucher.getId(), stock);
 
+        return true;
+    }
+
+    /**
+     * Warm up seckill stock in Redis after commit.
+     */
+    private void handleRedisStockWarmup(Long voucherId, Integer stock) {
+        String key = RedisConstants.SECKILL_STOCK_KEY + voucherId;
+        String value = stock.toString();
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    stringRedisTemplate.opsForValue().set(key, value);
+                }
+            });
+        } else {
+            stringRedisTemplate.opsForValue().set(key, value);
+        }
+    }
+
+    private void handleVoucherListCacheEvict(Long shopId) {
+        if (shopId == null) {
+            return;
+        }
+        String key = RedisConstants.CACHE_VOUCHER_LIST_KEY + shopId;
+
+        Runnable evict = () -> {
+            stringRedisTemplate.delete(key);
+            voucherListLocalCache.invalidate(shopId);
+        };
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    evict.run();
+                }
+            });
+        } else {
+            evict.run();
+        }
     }
 }
