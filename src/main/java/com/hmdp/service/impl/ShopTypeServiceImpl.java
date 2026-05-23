@@ -1,23 +1,23 @@
 package com.hmdp.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.ShopType;
 import com.hmdp.mapper.ShopTypeMapper;
 import com.hmdp.service.IShopTypeService;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisConstants;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.hmdp.utils.RedisConstants.CACHE_NULL_TTL;
-import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TTL;
+import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TYPE_KEY;
+import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TYPE_TTL;
 
 /**
  * <p>
@@ -29,25 +29,29 @@ import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TTL;
  */
 @Service
 public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> implements IShopTypeService {
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    public ShopTypeServiceImpl(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
+
     @Override
     public Result queryTypeList() {
-        String shopTypeJson = stringRedisTemplate.opsForValue().get("shop:types");
-        if( StringUtils.isNotBlank(shopTypeJson) ) {
+        String shopTypeJson = stringRedisTemplate.opsForValue().get(CACHE_SHOP_TYPE_KEY);
+        if (StrUtil.isNotBlank(shopTypeJson)) {
             List<ShopType> shopTypeList = JSONUtil.toList(shopTypeJson, ShopType.class);
             return Result.ok(shopTypeList);
         }
-        if(shopTypeJson != null) {
-            return Result.fail("店铺不存在!");
+        if (shopTypeJson != null) {
+            return Result.ok(Collections.emptyList());
         }
-        List<ShopType>  shopTypes = list();
-        if(shopTypes == null){
-            stringRedisTemplate.opsForValue().set("shop:types", "",CACHE_NULL_TTL,TimeUnit.MINUTES);
-            return Result.fail("店铺类型不存在");
+        List<ShopType> shopTypes = list();
+        if (shopTypes == null || shopTypes.isEmpty()) {
+            stringRedisTemplate.opsForValue().set(CACHE_SHOP_TYPE_KEY, "", CACHE_NULL_TTL, TimeUnit.MINUTES);
+            return Result.ok(Collections.emptyList());
         }
         String shopJson = JSONUtil.toJsonStr(shopTypes);
-        stringRedisTemplate.opsForValue().set("shop:types",shopJson, CACHE_SHOP_TTL, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(CACHE_SHOP_TYPE_KEY, shopJson, CACHE_SHOP_TYPE_TTL, TimeUnit.MINUTES);
         return Result.ok(shopTypes);
     }
 }

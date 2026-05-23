@@ -1,19 +1,14 @@
 package com.hmdp.controller;
 
-
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
-import com.hmdp.entity.User;
 import com.hmdp.service.IBlogService;
-import com.hmdp.service.IUserService;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import java.sql.PseudoColumnUsage;
 import java.util.List;
 
 /**
@@ -28,9 +23,11 @@ import java.util.List;
 @RequestMapping("/blog")
 public class BlogController {
 
-    @Resource
-    private IBlogService blogService;
+    private final IBlogService blogService;
 
+    public BlogController(IBlogService blogService) {
+        this.blogService = blogService;
+    }
 
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {
@@ -41,7 +38,6 @@ public class BlogController {
     public Result likeBlog(@PathVariable("id") Long id) {
         // 修改点赞数量
         return blogService.likeBlog(id);
-
     }
 
     @GetMapping("/of/me")
@@ -59,29 +55,34 @@ public class BlogController {
     @GetMapping("/hot")
     public Result queryHotBlog(@RequestParam(value = "current", defaultValue = "1") Integer current) {
         // 根据用户查询
-     return blogService.queryHotBlog(current);
-
+        return blogService.queryHotBlog(current);
     }
+
     @GetMapping("/{id}")
     public Result queryBlogById(@PathVariable("id") Long id) {
-
-        return  blogService.queryBlogById(id);
+        return blogService.queryBlogById(id);
     }
 
     @GetMapping("likes/{id}")
     public Result likes(@PathVariable("id") long id) {
-        return Result.ok(blogService.queryBlogLikes(id));
+        return blogService.queryBlogLikes(id);
     }
 
     @GetMapping("/of/user")
-    public  Result queryBlogByUserId(@RequestParam(value = "current",defaultValue = "1")Integer current,@RequestParam("id")Long id){
-        Page<Blog>page=blogService.query().eq("user_id",id).page(new Page<>(current,SystemConstants.MAX_PAGE_SIZE));
-        List<Blog> records=page.getRecords();
+    public Result queryBlogByUserId(
+            @RequestParam(value = "current", defaultValue = "1") Integer current,
+            @RequestParam("id") Long id) {
+        Page<Blog> page = blogService.query()
+                .eq("user_id", id)
+                .page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
+        List<Blog> records = page.getRecords();
         return Result.ok(records);
     }
+
     @GetMapping("/of/follow")
     public Result queryBlogOfFollow(
-            @RequestParam("lastId") Long max,@RequestParam(value = "offset",defaultValue = "0") Integer offset) {
-        return blogService.queryBlogOfFollow(max,offset);
+            @RequestParam("lastId") Long max,
+            @RequestParam(value = "offset", defaultValue = "0") Integer offset) {
+        return blogService.queryBlogOfFollow(max, offset);
     }
 }

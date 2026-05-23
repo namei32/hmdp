@@ -3,7 +3,7 @@ package com.hmdp.utils;
 /**
  * @author 虎哥
  */
-public abstract class RegexPatterns {
+public final class RegexPatterns {
     /**
      * 手机号正则
      */
@@ -21,4 +21,6 @@ public abstract class RegexPatterns {
      */
     public static final String VERIFY_CODE_REGEX = "^[a-zA-Z\\d]{6}$";
 
+    private RegexPatterns() {
+    }
 }

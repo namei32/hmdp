@@ -1,8 +1,8 @@
-# CacheClinet 上线改造清单
+# CacheClient 上线改造清单
 
 ## 目标
 
-将 `src/main/java/com/hmdp/utils/CacheClinet.java` 从教学/实验实现提升为可上线版本，重点覆盖：
+将 `src/main/java/com/hmdp/utils/CacheClient.java` 从教学/实验实现提升为可上线版本，重点覆盖：
 
 - 缓存穿透
 - 热点 key 击穿
@@ -167,7 +167,7 @@
 
 验收标准：
 
-- `CacheClinet` 不直接依赖具体业务类型命名
+- `CacheClient` 不直接依赖具体业务类型命名
 - 调用方可以显式传入 lock key 前缀或由通用策略生成
 
 ## P2 优化项
@@ -208,7 +208,7 @@
 
 问题：
 
-- 当前类名为 `CacheClinet`，存在拼写错误
+- 历史类名存在拼写错误
 
 要求：
 

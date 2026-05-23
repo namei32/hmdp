@@ -13,26 +13,26 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.nio.charset.StandardCharsets;
 
 @Component
 public class RateLimitInterceptor implements HandlerInterceptor {
 
-    @Resource
-    private RateLimitEngine rateLimitEngine;
-
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RateLimitEngine rateLimitEngine;
+
+    public RateLimitInterceptor(RateLimitEngine rateLimitEngine) {
+        this.rateLimitEngine = rateLimitEngine;
+    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        if (!(handler instanceof HandlerMethod)) {
+        if (!(handler instanceof HandlerMethod handlerMethod)) {
             return true;
         }
 
-        HandlerMethod handlerMethod = (HandlerMethod) handler;
         RateLimit rateLimit = handlerMethod.getMethodAnnotation(RateLimit.class);
         if (rateLimit == null) {
             rateLimit = handlerMethod.getBeanType().getAnnotation(RateLimit.class);

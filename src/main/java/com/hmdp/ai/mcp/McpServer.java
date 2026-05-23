@@ -1,7 +1,6 @@
 package com.hmdp.ai.mcp;
 
 import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.hmdp.ai.tool.ToolUtils;
 import com.hmdp.ai.tool.McpTool;
 import com.hmdp.ai.tool.ToolDefinition;
@@ -11,9 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import java.io.IOException;
+import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,11 +24,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class McpServer {
 
-    @Resource
-    private ToolRegistry toolRegistry;
-
     private final ConcurrentHashMap<String, McpSession> sessions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, SseEmitter> emitters = new ConcurrentHashMap<>();
+    private final ToolRegistry toolRegistry;
+
+    public McpServer(ToolRegistry toolRegistry) {
+        this.toolRegistry = toolRegistry;
+    }
 
     @PostConstruct
     public void init() {
@@ -53,7 +52,10 @@ public class McpServer {
         sessions.remove(sessionId);
         SseEmitter emitter = emitters.remove(sessionId);
         if (emitter != null) {
-            try { emitter.complete(); } catch (Exception ignored) {}
+            try {
+                emitter.complete();
+            } catch (Exception ignored) {
+            }
         }
     }
 

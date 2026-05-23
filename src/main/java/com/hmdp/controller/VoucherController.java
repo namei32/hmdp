@@ -1,16 +1,10 @@
 package com.hmdp.controller;
 
-
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Voucher;
-import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IShopService;
 import com.hmdp.service.IVoucherService;
 import org.springframework.web.bind.annotation.*;
-
-import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * <p>
@@ -24,10 +18,13 @@ import java.util.List;
 @RequestMapping("/voucher")
 public class VoucherController {
 
-    @Resource
-    private IVoucherService voucherService;
-    @Resource
-    private IShopService shopService;
+    private final IVoucherService voucherService;
+    private final IShopService shopService;
+
+    public VoucherController(IVoucherService voucherService, IShopService shopService) {
+        this.voucherService = voucherService;
+        this.shopService = shopService;
+    }
 
     /**
      * 新增普通券
@@ -37,10 +34,10 @@ public class VoucherController {
     @PostMapping
     public Result addVoucher(@RequestBody Voucher voucher) {
         Long shopId = voucher.getShopId();
-        if(shopId == null){
+        if (shopId == null) {
             return Result.fail("店铺id不能为空");
         }
-        if(shopService.getById(shopId) == null){
+        if (shopService.getById(shopId) == null) {
             return Result.fail("店铺不存在");
         }
         boolean success = voucherService.save(voucher);
@@ -58,10 +55,10 @@ public class VoucherController {
     @PostMapping("seckill")
     public Result addSeckillVoucher(@RequestBody Voucher voucher) {
         Long shopId = voucher.getShopId();
-        if(shopId == null){
+        if (shopId == null) {
             return Result.fail("店铺id不能为空");
         }
-        if(shopService.getById(shopId) == null){
+        if (shopService.getById(shopId) == null) {
             return Result.fail("店铺不存在");
         }
         boolean success = voucherService.addSeckillVoucher(voucher);
@@ -78,6 +75,6 @@ public class VoucherController {
      */
     @GetMapping("/list/{shopId}")
     public Result queryVoucherOfShop(@PathVariable("shopId") Long shopId) {
-       return voucherService.queryVoucherOfShop(shopId);
+        return voucherService.queryVoucherOfShop(shopId);
     }
 }

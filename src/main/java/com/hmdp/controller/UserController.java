@@ -1,6 +1,5 @@
 package com.hmdp.controller;
 
-
 import cn.hutool.core.bean.BeanUtil;
 import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
@@ -13,8 +12,7 @@ import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * <p>
@@ -29,18 +27,20 @@ import javax.servlet.http.HttpSession;
 @RequestMapping("/user")
 public class UserController {
 
-    @Resource
-    private IUserService userService;
+    private final IUserService userService;
+    private final IUserInfoService userInfoService;
 
-    @Resource
-    private IUserInfoService userInfoService;
+    public UserController(IUserService userService, IUserInfoService userInfoService) {
+        this.userService = userService;
+        this.userInfoService = userInfoService;
+    }
 
     /**
      * 发送手机验证码
      */
     @PostMapping("code")
     public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
-        return  userService.sendCode(phone, session);
+        return userService.sendCode(phone, session);
     }
 
     /**
@@ -48,7 +48,7 @@ public class UserController {
      * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
      */
     @PostMapping("/login")
-    public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session){
+    public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session) {
         return userService.login(loginForm, session);
     }
 
@@ -57,20 +57,19 @@ public class UserController {
      * @return 无
      */
     @PostMapping("/logout")
-    public Result logout(){
-        // TODO 实现登出功能
+    public Result logout() {
         return userService.logout();
     }
 
     @GetMapping("/me")
-    public Result me(){
-        UserDTO userDTO=UserHolder.getUser();
+    public Result me() {
+        UserDTO userDTO = UserHolder.getUser();
         log.info("调用me");
         return Result.ok(userDTO);
     }
 
     @GetMapping("/info/{id}")
-    public Result info(@PathVariable("id") Long userId){
+    public Result info(@PathVariable("id") Long userId) {
         // 查询详情
         UserInfo info = userInfoService.getById(userId);
         if (info == null) {
@@ -82,13 +81,14 @@ public class UserController {
         // 返回
         return Result.ok(info);
     }
+
     @GetMapping("/{id}")
-    public Result getById(@PathVariable("id") Long id){
+    public Result getById(@PathVariable("id") Long id) {
         User user = userService.getById(id);
-        if(user==null){
+        if (user == null) {
             return Result.ok();
         }
-        UserDTO userDTO = BeanUtil.copyProperties(user,UserDTO.class);
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
         return Result.ok(userDTO);
     }
 }

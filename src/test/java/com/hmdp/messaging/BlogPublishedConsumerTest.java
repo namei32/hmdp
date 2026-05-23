@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -35,7 +36,7 @@ class BlogPublishedConsumerTest {
     @BeforeEach
     void setUp() {
         consumer = new BlogPublishedConsumer(followService, stringRedisTemplate);
-        when(stringRedisTemplate.opsForZSet()).thenReturn(zSetOperations);
+        lenient().when(stringRedisTemplate.opsForZSet()).thenReturn(zSetOperations);
     }
 
     @Test

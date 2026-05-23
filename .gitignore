@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local Application Config ###
+src/main/resources/application-local.yaml
+src/main/resources/application-*.local.yaml
+
+### AI / MCP Tools ###
+.claude/
+.playwright-mcp/
+*.vsix

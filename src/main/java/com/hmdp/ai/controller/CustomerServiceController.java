@@ -1,21 +1,16 @@
 package com.hmdp.ai.controller;
 
-import cn.hutool.json.JSONObject;
-import cn.hutool.json.JSONUtil;
 import com.hmdp.ai.conversation.Conversation;
 import com.hmdp.ai.conversation.ConversationService;
-import com.hmdp.ai.mcp.McpProtocol;
-import com.hmdp.ai.mcp.McpServer;
-import com.hmdp.ai.mcp.McpSession;
 import com.hmdp.ai.service.AiCustomerService;
+import com.hmdp.ai.tool.ToolUtils;
 import com.hmdp.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
-import com.hmdp.ai.tool.ToolUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -24,17 +19,19 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
+@ConditionalOnProperty(prefix = "hmdp.ai", name = "enabled", havingValue = "true")
 @RequestMapping({"/api/cs", "/cs"})
 public class CustomerServiceController {
 
-    @Resource
-    private AiCustomerService aiCustomerService;
+    private final AiCustomerService aiCustomerService;
+    private final ConversationService conversationService;
 
-    @Resource
-    private ConversationService conversationService;
-
-    @Resource
-    private McpServer mcpServer;
+    public CustomerServiceController(
+            AiCustomerService aiCustomerService,
+            ConversationService conversationService) {
+        this.aiCustomerService = aiCustomerService;
+        this.conversationService = conversationService;
+    }
 
     /**
      * Send a chat message, receive SSE stream response.
@@ -88,7 +85,9 @@ public class CustomerServiceController {
                 for (Conversation.Message msg : c.getMessages()) {
                     if ("user".equals(msg.getRole())) {
                         title = msg.getContent();
-                        if (title.length() > 20) title = title.substring(0, 20) + "...";
+                        if (title.length() > 20) {
+                            title = title.substring(0, 20) + "...";
+                        }
                         break;
                     }
                 }

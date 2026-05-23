@@ -4,78 +4,125 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智能客服 - 黑马点评</title>
-    <link rel="stylesheet" href="/css/cs.css">
+    <link rel="stylesheet" href="/css/cs.css?v=20260514-natural">
 </head>
 <body>
     <div id="app">
+        <!-- Mobile overlay backdrop -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         <!-- Sidebar -->
-        <aside class="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
+                <a class="sidebar-brand" href="/" aria-label="返回首页">
+                    <span class="brand-icon">H</span>
+                    <span class="brand-text">黑马点评</span>
+                </a>
                 <button class="btn-new-chat" id="btnNewChat">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     新对话
                 </button>
             </div>
-            <div class="conversation-list" id="convList"></div>
-            <div class="sidebar-empty" id="sidebarEmpty">
+            <div class="conversation-list" id="convList">
+                <!-- Loading skeleton injected here -->
+            </div>
+            <div class="sidebar-empty" id="sidebarEmpty" style="display:none">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                </svg>
                 <p>暂无对话记录</p>
+                <p class="sidebar-empty-hint">点击上方按钮开始新对话</p>
+            </div>
+            <div class="sidebar-footer">
+                <p class="sidebar-footer-text">AI 客服 · 实验性功能</p>
             </div>
         </aside>
 
         <!-- Main Chat Area -->
         <main class="chat-main">
-            <!-- Toggle sidebar -->
-            <button class="btn-toggle-sidebar" id="btnToggleSidebar">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            </button>
-
-            <!-- Header -->
+            <!-- Mobile header -->
             <header class="chat-header">
-                <div class="header-logo">
-                    <span class="logo-icon">H</span>
-                    <div>
-                        <h2>黑马点评智能客服</h2>
-                        <p class="header-subtitle">AI 驱动的智能助手 · 随时为您服务</p>
-                    </div>
+                <button class="btn-toggle-sidebar" id="btnToggleSidebar" aria-label="切换侧边栏">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <div class="header-info">
+                    <h2 class="header-title">智能客服</h2>
+                    <p class="header-subtitle">商户、优惠、订单和探店问题都可以直接问</p>
                 </div>
+                <div class="header-status" aria-label="AI 客服在线">
+                    <span class="status-dot"></span>
+                    在线
+                </div>
+                <button class="btn-mobile-new" id="btnMobileNew" aria-label="新对话">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                </button>
             </header>
 
+            <!-- Error banner -->
+            <div class="error-banner" id="errorBanner" style="display:none">
+                <span class="error-banner-text" id="errorBannerText"></span>
+                <button class="error-banner-close" id="errorBannerClose">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
             <!-- Messages -->
-            <div class="chat-messages" id="chatMessages" style="display:none;">
-                <div class="messages-wrapper" id="messagesWrapper"></div>
+            <div class="chat-messages" id="chatMessages" style="display:none">
+                <div class="messages-container" id="messagesContainer"></div>
             </div>
 
             <!-- Welcome Screen -->
             <div class="welcome-screen" id="welcomeScreen">
-                <div class="welcome-icon">
-                    <span>🤖</span>
-                </div>
-                <h1>您好，我是小点</h1>
-                <p class="welcome-desc">黑马点评智能客服助手，可以帮您查询商户、优惠券、订单等信息</p>
-                <div class="suggestions" id="suggestions">
-                    <button class="chip">帮我查一下火锅店</button>
-                    <button class="chip">附近有什么好吃的</button>
-                    <button class="chip">有什么优惠券活动</button>
-                    <button class="chip">最近的热门探店笔记</button>
-                    <button class="chip">我的订单在哪里看</button>
-                    <button class="chip">你能帮我做什么</button>
+                <div class="welcome-content">
+                    <div class="welcome-avatar">
+                        <span>🤖</span>
+                    </div>
+                    <h1>您好，我是小点</h1>
+                    <p class="welcome-desc">黑马点评 AI 智能助手，可以帮您查询商户信息、优惠券、订单等</p>
+                    <div class="suggestions" id="suggestions">
+                        <button class="chip">
+                            <span class="chip-icon">🍲</span>帮我查一下火锅店
+                        </button>
+                        <button class="chip">
+                            <span class="chip-icon">📍</span>附近有什么好吃的
+                        </button>
+                        <button class="chip">
+                            <span class="chip-icon">🎫</span>有什么优惠券活动
+                        </button>
+                        <button class="chip">
+                            <span class="chip-icon">📝</span>最近的热门探店笔记
+                        </button>
+                        <button class="chip">
+                            <span class="chip-icon">📦</span>我的订单在哪里看
+                        </button>
+                        <button class="chip">
+                            <span class="chip-icon">❓</span>你能帮我做什么
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Input Area -->
             <div class="chat-input-area">
-                <div class="input-wrapper">
-                    <input type="text" class="chat-input" id="chatInput"
-                           placeholder="输入您的问题..." autofocus>
-                    <button class="btn-send" id="btnSend" disabled>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    </button>
+                <div class="input-container">
+                    <div class="input-row">
+                        <input type="text" class="chat-input" id="chatInput"
+                               placeholder="输入您的问题，按 Enter 发送..."
+                               autocomplete="off" autofocus>
+                        <button class="btn-send" id="btnSend" disabled aria-label="发送消息">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="input-hint">AI 回答仅供参考，关键信息请以实际页面为准</p>
                 </div>
-                <p class="input-hint">按 Enter 发送消息 · AI 回答仅供参考，关键信息请以实际页面为准</p>
             </div>
         </main>
     </div>
 
-    <script src="/js/cs.js"></script>
+    <script src="/js/cs.js?v=20260514-natural"></script>
 </body>
 </html>

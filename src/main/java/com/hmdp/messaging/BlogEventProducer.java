@@ -6,9 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -31,13 +32,17 @@ public class BlogEventProducer {
     }
 
     private void doPublish(BlogPublishedEvent event) {
-        ListenableFuture<SendResult<String, BlogPublishedEvent>> future = kafkaTemplate.send(
+        CompletableFuture<SendResult<String, BlogPublishedEvent>> future = kafkaTemplate.send(
                 KafkaTopics.BLOG_PUBLISHED,
                 String.valueOf(event.getAuthorId()),
                 event);
-        future.addCallback(
-                result -> log.info("published blog event, blogId={}, authorId={}", event.getBlogId(), event.getAuthorId()),
-                ex -> log.error("failed to publish blog event, blogId={}, authorId={}",
-                        event.getBlogId(), event.getAuthorId(), ex));
+        future.whenComplete((result, ex) -> {
+            if (ex == null) {
+                log.info("published blog event, blogId={}, authorId={}", event.getBlogId(), event.getAuthorId());
+                return;
+            }
+            log.error("failed to publish blog event, blogId={}, authorId={}",
+                    event.getBlogId(), event.getAuthorId(), ex);
+        });
     }
 }

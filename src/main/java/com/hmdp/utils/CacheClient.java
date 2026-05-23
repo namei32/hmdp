@@ -22,7 +22,7 @@ import java.util.function.Function;
 
 @Slf4j
 @Component
-public class CacheClinet {
+public class CacheClient {
     private static final String LOCK_TOKEN_PREFIX = UUID.randomUUID().toString(true) + "-";
     private static final int CACHE_REBUILD_THREADS = 10;
     private static final int CACHE_REBUILD_QUEUE_CAPACITY = 200;
@@ -56,7 +56,7 @@ public class CacheClinet {
 
     private final StringRedisTemplate stringRedisTemplate;
 
-    public CacheClinet(StringRedisTemplate stringRedisTemplate) {
+    public CacheClient(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
     }
 

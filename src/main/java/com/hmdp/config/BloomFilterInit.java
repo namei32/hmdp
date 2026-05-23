@@ -7,16 +7,18 @@ import org.redisson.api.RBloomFilter;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 
 @Component
 public class BloomFilterInit {
-    @Resource
-    private RedissonClient redissonClient;
-    @Resource
-    private IShopService shopService;
+    private final RedissonClient redissonClient;
+    private final IShopService shopService;
+
+    public BloomFilterInit(RedissonClient redissonClient, IShopService shopService) {
+        this.redissonClient = redissonClient;
+        this.shopService = shopService;
+    }
 
     @PostConstruct
     public void initBloomFilter() {
@@ -25,5 +27,4 @@ public class BloomFilterInit {
         List<Shop> shops = shopService.query().select("id").list();
         shops.forEach(shop -> bloomFilter.add(shop.getId()));
     }
-
 }

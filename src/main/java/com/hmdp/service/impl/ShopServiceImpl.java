@@ -1,5 +1,6 @@
 package com.hmdp.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -7,7 +8,7 @@ import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
 import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
-import com.hmdp.utils.CacheClinet;
+import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -19,9 +20,9 @@ import org.springframework.data.geo.GeoResults;
 import org.springframework.data.redis.connection.RedisGeoCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.domain.geo.GeoReference;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,30 +46,25 @@ import static com.hmdp.utils.RedisConstants.SHOP_GEO_KEY;
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
     private static final String SHOP_NOT_FOUND_MESSAGE = "店铺不存在!";
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
-    @Resource
-    private CacheClinet cacheClinet;
-    @Resource
-    private RedissonClient redissonClient;
-    @Resource(name = "shopLocalCache")
-    private Cache<Long, Shop> shopLocalCache;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final CacheClient cacheClient;
+    private final RedissonClient redissonClient;
+    private final Cache<Long, Shop> shopLocalCache;
+
+    public ShopServiceImpl(
+            StringRedisTemplate stringRedisTemplate,
+            CacheClient cacheClient,
+            RedissonClient redissonClient,
+            @Qualifier("shopLocalCache") Cache<Long, Shop> shopLocalCache) {
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.cacheClient = cacheClient;
+        this.redissonClient = redissonClient;
+        this.shopLocalCache = shopLocalCache;
+    }
 
     @Override
     public Result queryShopById(Long id) {
-        // Shop shop =
-        // cacheClinet.queryWithPassThrough(CACHE_SHOP_KEY,id,Shop.class,this::getById,
-        // RedisConstants.CACHE_SHOP_TTL,TimeUnit.MINUTES);
-        // Shop shop = cacheClinet.queryWithPassThrough(CACHE_SHOP_KEY, id, Shop.class,
-        // this::getById,
-        // RedisConstants.CACHE_SHOP_TTL, TimeUnit.MINUTES);
 
-        // Shop shop = cacheClinet.queryWithPassThrough(CACHE_SHOP_KEY, id, Shop.class,
-        // this::getById,
-        // RedisConstants.CACHE_SHOP_TTL, TimeUnit.MINUTES);
-        // if (shop == null) {
-        // return Result.fail("店铺不存在!");
-        // }
         RBloomFilter<Long> bloomFilter = getShopBloomFilter();
         if (!bloomFilter.contains(id)) {
             return Result.fail(SHOP_NOT_FOUND_MESSAGE);
@@ -78,7 +74,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             log.info("使用Caffeine缓存");
             return Result.ok(shop);
         }
-        shop = cacheClinet.queryWithPassThrough(CACHE_SHOP_KEY, id, Shop.class, this::getById,
+        shop = cacheClient.queryWithPassThrough(CACHE_SHOP_KEY, id, Shop.class, this::getById,
                 RedisConstants.CACHE_SHOP_TTL, TimeUnit.MINUTES);
         if (shop == null) {
             return Result.fail(SHOP_NOT_FOUND_MESSAGE);
@@ -86,41 +82,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         shopLocalCache.put(id, shop);
         return Result.ok(shop);
     }
-
-    // public Shop queryWithMutex(Long id) {
-    // String shopJson = stringRedisTemplate.opsForValue().get(CACHE_SHOP_KEY + id);
-    // if(StrUtil.isNotBlank(shopJson)) {
-    // Shop shop = JSONUtil.toBean(shopJson, Shop.class);
-    // return shop;
-    // }
-    // if(shopJson != null) {
-    // return null;
-    // }
-    // String lockKey = RedisConstants.LOCK_SHOP_KEY + id;
-    // Shop shop = null;
-    // try {
-    // boolean isLock = tryLock(lockKey);
-    // if(!isLock) {
-    // Thread.sleep(50);
-    // return queryWithMutex(id);
-    // }
-    // shop = getById(id);
-    // Thread.sleep(200);
-    // if(shop == null) {
-    // stringRedisTemplate.opsForValue().set(CACHE_SHOP_KEY + id, "",
-    // RedisConstants.CACHE_NULL_TTL, TimeUnit.MINUTES);
-    // return null;
-    // }
-    // stringRedisTemplate.opsForValue().set(CACHE_SHOP_KEY + id,
-    // JSONUtil.toJsonStr(shop), RedisConstants.CACHE_SHOP_TTL, TimeUnit.MINUTES);
-    //
-    // } catch (InterruptedException e) {
-    // throw new RuntimeException(e);
-    // } finally {
-    // unlock(lockKey);
-    // }
-    // return shop;
-    // }
 
     @Override
     public boolean save(Shop shop) {
@@ -202,7 +163,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         }
 
         // 2) 按 ids 的顺序从 DB 查询（保持与 Redis 的距离排序一致）
-        String orderBy = "ORDER BY FIELD(id," + cn.hutool.core.util.StrUtil.join(",", ids) + ")";
+        String orderBy = "ORDER BY FIELD(id," + StrUtil.join(",", ids) + ")";
         List<Shop> shops = query()
                 .in("id", ids)
                 .last(orderBy)

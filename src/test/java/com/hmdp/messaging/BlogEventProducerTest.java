@@ -11,7 +11,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.util.concurrent.SettableListenableFuture;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -27,12 +27,12 @@ class BlogEventProducerTest {
     @Mock
     private KafkaTemplate<String, BlogPublishedEvent> kafkaTemplate;
 
-    private SettableListenableFuture<SendResult<String, BlogPublishedEvent>> sendFuture;
+    private CompletableFuture<SendResult<String, BlogPublishedEvent>> sendFuture;
 
     @BeforeEach
     void setUp() {
         producer = new BlogEventProducer(kafkaTemplate);
-        sendFuture = new SettableListenableFuture<>();
+        sendFuture = new CompletableFuture<>();
         doReturn(sendFuture).when(kafkaTemplate).send(anyString(), anyString(), any(BlogPublishedEvent.class));
     }
 

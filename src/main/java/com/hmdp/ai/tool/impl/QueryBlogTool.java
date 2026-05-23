@@ -1,15 +1,17 @@
 package com.hmdp.ai.tool.impl;
 
-import com.hmdp.ai.tool.ToolUtils;
 import com.hmdp.ai.tool.McpTool;
 import com.hmdp.ai.tool.ToolDefinition;
+import com.hmdp.ai.tool.ToolJsonUtils;
 import com.hmdp.ai.tool.ToolResult;
+import com.hmdp.ai.tool.ToolUtils;
 import com.hmdp.entity.Blog;
 import com.hmdp.service.IBlogService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +19,13 @@ import java.util.Map;
 @Component
 public class QueryBlogTool implements McpTool {
 
-    @Resource
-    private IBlogService blogService;
-
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    private final IBlogService blogService;
+
+    public QueryBlogTool(IBlogService blogService) {
+        this.blogService = blogService;
+    }
 
     @Override
     public ToolDefinition getDefinition() {
@@ -55,21 +60,25 @@ public class QueryBlogTool implements McpTool {
                         List<Blog> blogs = (List<Blog>) result.getData();
                         return ToolResult.ok(formatBlogList(blogs));
                     }
-                    return ToolResult.ok("暂无热门笔记");
+                    return ToolResult.ok(ToolJsonUtils.empty("blog_list", "暂无热门笔记"));
                 }
                 case "blog_detail": {
                     Long blogId = toLong(args.get("blogId"));
-                    if (blogId == null) return ToolResult.fail("blogId 参数不能为空");
+                    if (blogId == null) {
+                        return ToolResult.fail("blogId 参数不能为空");
+                    }
                     com.hmdp.dto.Result result = blogService.queryBlogById(blogId);
                     if (result.getSuccess() && result.getData() != null) {
                         Blog blog = (Blog) result.getData();
                         return ToolResult.ok(formatBlogDetail(blog));
                     }
-                    return ToolResult.ok("未找到该笔记");
+                    return ToolResult.ok(ToolJsonUtils.empty("blog_detail", "未找到该笔记"));
                 }
                 case "user_blogs": {
                     Long userId = toLong(args.get("userId"));
-                    if (userId == null) return ToolResult.fail("userId 参数不能为空");
+                    if (userId == null) {
+                        return ToolResult.fail("userId 参数不能为空");
+                    }
                     List<Blog> blogs = blogService.query()
                             .eq("user_id", userId)
                             .orderByDesc("create_time")
@@ -86,36 +95,56 @@ public class QueryBlogTool implements McpTool {
     }
 
     private String formatBlogList(List<Blog> blogs) {
-        if (blogs == null || blogs.isEmpty()) return "暂无笔记";
-        StringBuilder sb = new StringBuilder();
-        sb.append("共有 ").append(blogs.size()).append(" 条笔记:\n");
-        int idx = 1;
-        for (Blog b : blogs) {
-            sb.append(idx++).append(". ");
-            if (b.getTitle() != null) sb.append(b.getTitle());
-            sb.append(" | 点赞:").append(b.getLiked() != null ? b.getLiked() : 0);
-            sb.append(" | 评论:").append(b.getComments() != null ? b.getComments() : 0);
-            sb.append(" | ID:").append(b.getId());
-            if (b.getCreateTime() != null) sb.append(" | ").append(b.getCreateTime().format(FMT));
-            sb.append("\n");
+        if (blogs == null || blogs.isEmpty()) {
+            return ToolJsonUtils.empty("blog_list", "暂无笔记");
         }
-        return sb.toString();
+        List<Map<String, Object>> items = new ArrayList<>(blogs.size());
+        for (Blog b : blogs) {
+            Map<String, Object> item = ToolJsonUtils.object(
+                    "id", b.getId(),
+                    "title", b.getTitle(),
+                    "liked", b.getLiked() != null ? b.getLiked() : 0,
+                    "comments", b.getComments() != null ? b.getComments() : 0
+            );
+            if (b.getCreateTime() != null) {
+                item.put("createTime", b.getCreateTime().format(FMT));
+            }
+            items.add(item);
+        }
+        return ToolJsonUtils.list("blog_list", blogs.size(), items);
     }
 
     private String formatBlogDetail(Blog b) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("笔记详情:\n");
-        if (b.getTitle() != null) sb.append("标题: ").append(b.getTitle()).append("\n");
-        if (b.getContent() != null) sb.append("内容: ").append(b.getContent().length() > 200 ? b.getContent().substring(0, 200) + "..." : b.getContent()).append("\n");
-        sb.append("点赞数: ").append(b.getLiked() != null ? b.getLiked() : 0).append("\n");
-        sb.append("评论数: ").append(b.getComments() != null ? b.getComments() : 0).append("\n");
-        if (b.getCreateTime() != null) sb.append("发布时间: ").append(b.getCreateTime().format(FMT)).append("\n");
-        return sb.toString();
+        Map<String, Object> data = ToolJsonUtils.object(
+                "id", b.getId(),
+                "title", b.getTitle(),
+                "content", b.getContent() != null && b.getContent().length() > 200
+                        ? b.getContent().substring(0, 200) + "..."
+                        : b.getContent(),
+                "liked", b.getLiked() != null ? b.getLiked() : 0,
+                "comments", b.getComments() != null ? b.getComments() : 0
+        );
+        if (b.getCreateTime() != null) {
+            data.put("createTime", formatTime(b.getCreateTime()));
+        }
+        return ToolJsonUtils.detail("blog_detail", data);
+    }
+
+    private String formatTime(LocalDateTime time) {
+        return time == null ? null : time.format(FMT);
     }
 
     private Long toLong(Object val) {
-        if (val == null) return null;
-        if (val instanceof Number) return ((Number) val).longValue();
-        try { return Long.valueOf(val.toString()); } catch (NumberFormatException e) { return null; }
+        if (val == null) {
+            return null;
+        }
+        if (val instanceof Number number) {
+            return number.longValue();
+        }
+        try {
+            return Long.valueOf(val.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>黑马点评 - 发现身边好店</title>
+<style>
+/* ============================================================
+   RESET & DESIGN TOKENS
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6366f1;--ph:#4f46e5;--pa:#4338ca;
+  --pl:#eef2ff;--plh:#e0e7ff;
+  --gold:#f59e0b;--go:#fbbf24;--gd:#fef3c7;
+  --success:#059669;--err:#ef4444;
+  --bg:#ffffff;--b2:#f8fafc;--b3:#f1f5f9;
+  --bd:#e2e8f0;--bl:#f1f5f9;
+  --t:#0f172a;--t2:#475569;--t3:#94a3b8;--tw:#ffffff;
+  --r:6px;--r2:10px;--r3:14px;--rf:9999px;
+  --tr:.2s ease;--trs:.15s ease;
+  --mw:1280px;--nh:64px;
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--t);background:var(--bg);line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
+button{font-family:inherit;cursor:pointer;border:none}input{font-family:inherit}
+.ct{max-width:var(--mw);margin:0 auto;padding:0 24px}
+
+/* ============================================================
+   TOP NAVIGATION
+   ============================================================ */
+.tn{height:var(--nh);background:var(--bg);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.nc{max-width:var(--mw);margin:0 auto;padding:0 24px;height:100%;display:flex;align-items:center;gap:24px}
+.ln{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.lm{width:36px;height:36px;background:linear-gradient(135deg,var(--p),var(--pa));color:#fff;border-radius:var(--r2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex-shrink:0}
+.lt{font-size:18px;font-weight:700;color:var(--t)}
+.nl{display:flex;align-items:center;gap:20px;flex-shrink:0}
+.nl a{font-size:14px;font-weight:500;color:var(--t2);transition:color var(--trs);white-space:nowrap}
+.nl a:hover{color:var(--p)}
+.nlg{border-right:1px solid var(--bd);padding-right:16px}
+.ns{flex:1;max-width:400px;position:relative;margin-left:auto}
+.si{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none}
+.sf{width:100%;padding:9px 16px 9px 42px;border:1px solid var(--bd);border-radius:var(--rf);font-size:14px;outline:none;background:var(--b2);transition:border-color var(--trs),box-shadow var(--trs)}
+.sf:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(99,102,241,.1);background:var(--bg)}
+.sf::placeholder{color:var(--t3)}
+.sd{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r2);box-shadow:0 12px 32px rgba(0,0,0,.12);max-height:360px;overflow-y:auto;z-index:50}
+.sd.v{display:block}
+.sri{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background var(--trs)}
+.sri:hover{background:var(--b2)}.sri+.sri{border-top:1px solid var(--bl)}
+.srimg{width:44px;height:44px;border-radius:var(--r);background:var(--b3);object-fit:cover;flex-shrink:0}
+.srin{min-width:0}.srname{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srmeta{font-size:12px;color:var(--t3);margin-top:2px}
+.na{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.nb{display:flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--rf);font-size:13px;font-weight:500;background:var(--b2);color:var(--t2);transition:all var(--trs);white-space:nowrap;border:1px solid transparent}
+.nb:hover{background:var(--pl);color:var(--p);border-color:var(--p)}
+.nba{background:var(--p);color:#fff}
+.nba:hover{background:var(--ph);color:#fff;border-color:transparent}
+
+/* ============================================================
+   HERO SECTION
+   ============================================================ */
+.hero{background:linear-gradient(160deg,#312e81 0%,#4338ca 25%,#6366f1 55%,#818cf8 100%);padding:64px 0 72px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.hc{max-width:800px;margin:0 auto;text-align:center;padding:0 24px;position:relative;z-index:1}
+.hc h1{font-size:40px;font-weight:800;color:#fff;margin-bottom:12px;letter-spacing:-.5px}
+.hc p{font-size:17px;color:rgba(255,255,255,.75);margin-bottom:32px;line-height:1.7}
+.hs{display:flex;gap:12px;max-width:560px;margin:0 auto;position:relative}
+.hs input{flex:1;padding:14px 20px;border:none;border-radius:var(--rf);font-size:15px;outline:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.hs input::placeholder{color:var(--t3)}
+.hs button{padding:14px 32px;background:var(--p);color:#fff;border-radius:var(--rf);font-size:15px;font-weight:600;transition:background var(--trs);white-space:nowrap}
+.hs button:hover{background:var(--ph)}
+.hsb{display:flex;justify-content:center;gap:32px;margin-top:36px}
+.hstat{text-align:center}
+.hstat .n{font-size:28px;font-weight:700;color:#fff}
+.hstat .l{font-size:13px;color:rgba(255,255,255,.6);margin-top:2px}
+
+/* ============================================================
+   SECTION TITLES
+   ============================================================ */
+.sec{padding:56px 0}
+.sec-header{text-align:center;margin-bottom:40px}
+.sec-header h2{font-size:28px;font-weight:700;color:var(--t);margin-bottom:8px}
+.sec-header p{font-size:15px;color:var(--t3)}
+
+/* ============================================================
+   CATEGORIES
+   ============================================================ */
+.cat-sec{padding:40px 0;border-bottom:1px solid var(--bd);background:var(--b2)}
+.cat-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.cat-item{display:flex;align-items:center;gap:8px;padding:10px 20px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--rf);font-size:14px;font-weight:500;color:var(--t2);cursor:pointer;transition:all var(--trs);white-space:nowrap}
+.cat-item:hover{border-color:var(--p);color:var(--p);box-shadow:0 2px 8px rgba(99,102,241,.12);transform:translateY(-1px)}
+.cat-item.act{background:var(--p);color:#fff;border-color:var(--p)}
+.cat-icon{font-size:18px}
+
+/* ============================================================
+   SHOP CARDS
+   ============================================================ */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+.sc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r3);overflow:hidden;cursor:pointer;transition:transform var(--trs),box-shadow var(--trs);position:relative}
+.sc:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(0,0,0,.1)}
+.scimg{width:100%;height:170px;object-fit:cover;background:var(--b3)}
+.scbd{padding:16px}
+.scn{font-size:16px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.scnm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scs{display:flex;align-items:center;gap:3px;color:var(--gold);font-weight:700;font-size:14px;white-space:nowrap}
+.scm{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t3);flex-wrap:wrap}
+.scma{background:var(--b2);padding:2px 8px;border-radius:var(--r);font-size:12px}
+.scmc{color:var(--t2)}
+.scmt{margin-top:6px;font-size:12px;color:var(--t3)}
+.scmt span{padding:2px 8px;background:var(--pl);color:var(--p);border-radius:var(--r);margin-right:4px;font-size:11px}
+.sc.skel{height:280px;border:none;cursor:default;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:sh 1.5s infinite}
+.sc.skel:hover{transform:none;box-shadow:none}
+
+/* ============================================================
+   BLOG CARDS
+   ============================================================ */
+.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
+.bc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r3);padding:20px;cursor:pointer;transition:transform var(--trs),box-shadow var(--trs);display:flex;gap:14px}
+.bc:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
+.bca{width:44px;height:44px;border-radius:50%;background:var(--b3);flex-shrink:0;object-fit:cover}
+.bcb{flex:1;min-width:0}
+.bch{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bchn{font-size:14px;font-weight:600;color:var(--t)}
+.bcht{font-size:12px;color:var(--t3)}
+.bcti{font-size:15px;font-weight:600;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bcco{font-size:13px;color:var(--t2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.6;margin-bottom:10px}
+.bcf{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--t3)}
+.bsi{display:flex;align-items:center;gap:3px}
+.bc-skel{height:140px;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:sh 1.5s infinite;border-radius:var(--r3)}
+
+/* ============================================================
+   AI CUSTOMER SERVICE SECTION
+   ============================================================ */
+.cs-sec{padding:56px 0;background:linear-gradient(160deg,#1e1b4b 0%,#312e81 50%,#4338ca 100%);position:relative;overflow:hidden}
+.cs-sec::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='1.5'/%3E%3C/g%3E%3C/svg%3E")}
+.cs-wrap{position:relative;z-index:1;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.cs-left{color:#fff}
+.cs-left h2{font-size:32px;font-weight:700;margin-bottom:12px}
+.cs-left p{font-size:15px;color:rgba(255,255,255,.7);line-height:1.7;margin-bottom:20px}
+.cs-features{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.cs-feat{display:flex;align-items:center;gap:10px;font-size:14px;color:rgba(255,255,255,.85)}
+.cs-feat svg{flex-shrink:0;color:#a5b4fc}
+.cs-left .btn-open{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:#fff;color:var(--p);border-radius:var(--rf);font-size:15px;font-weight:600;transition:all var(--trs)}
+.cs-left .btn-open:hover{background:var(--pl);transform:translateY(-1px)}
+/* Right: chat panel */
+.cs-panel{background:var(--bg);border-radius:var(--r3);box-shadow:0 20px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;height:420px;overflow:hidden}
+.cs-ph{display:flex;align-items:center;gap:10px;padding:16px 20px;background:linear-gradient(135deg,var(--p),var(--ph));color:#fff;flex-shrink:0}
+.cs-ph span{font-size:22px}.cs-ph h3{font-size:16px;font-weight:600}.cs-ph p{font-size:11px;opacity:.8}
+.cs-pbd{flex:1;overflow-y:auto;padding:16px;background:var(--b2)}
+.cpwelcome{text-align:center;padding:16px 0}
+.cpwi{font-size:40px;margin-bottom:8px}
+.cpwt{font-size:15px;font-weight:600;margin-bottom:4px}
+.cpwd{font-size:12px;color:var(--t2);margin-bottom:16px}
+.cpq{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.cq{display:inline-block;padding:7px 14px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--rf);font-size:12px;color:var(--t2);cursor:pointer;transition:all var(--trs)}
+.cq:hover{background:var(--pl);border-color:var(--p);color:var(--p)}
+/* Messages in panel */
+.cspm{display:flex;flex-direction:column;gap:2px}
+.msg{display:flex;gap:8px;margin-bottom:12px;animation:mi .25s ease}
+@keyframes mi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.u{justify-content:flex-end}
+.ma{width:26px;height:26px;min-width:26px;border-radius:50%;background:var(--b3);display:flex;align-items:center;justify-content:center;font-size:13px}
+.mb{max-width:80%;padding:8px 12px;border-radius:14px;font-size:13px;line-height:1.55;word-break:break-word}
+.msg.u .mb{background:var(--p);color:#fff;border-bottom-right-radius:4px}
+.msg.a .mb{background:var(--bg);color:var(--t);border:1px solid var(--bd);border-bottom-left-radius:4px}
+.mb strong{font-weight:600}
+.tc{display:flex;align-items:center;gap:6px;color:var(--p);font-size:12px;font-weight:500}
+.tc svg{animation:sp 2s linear infinite}@keyframes sp{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.trh{display:flex;align-items:center;gap:6px;color:var(--success);font-weight:500;font-size:12px;cursor:pointer;padding:4px 0}.trh:hover{opacity:.8}
+.trb{margin-top:6px;padding:8px 10px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:var(--r2);font-size:11px;font-family:monospace;white-space:pre-wrap;max-height:140px;overflow-y:auto}
+.td{display:flex;gap:4px;padding:11px 14px}.td .d{width:6px;height:6px;background:var(--t3);border-radius:50%;animation:bo 1.4s infinite ease-in-out both}
+.td .d:nth-child(1){animation-delay:0s}.td .d:nth-child(2){animation-delay:.16s}.td .d:nth-child(3){animation-delay:.32s}
+@keyframes bo{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.cspi{padding:14px 16px;border-top:1px solid var(--bd);flex-shrink:0;display:flex;gap:8px}
+.cspi input{flex:1;padding:9px 14px;border:1px solid var(--bd);border-radius:var(--rf);font-size:13px;outline:none;background:var(--b2);min-width:0}
+.cspi input:focus{border-color:var(--p)}
+.cspi button{width:34px;height:34px;min-width:34px;background:var(--p);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background var(--trs)}
+.cspi button:hover:not(:disabled){background:var(--ph)}
+.cspi button:disabled{background:var(--t3);cursor:not-allowed}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.ft{background:#0f172a;color:rgba(255,255,255,.7);padding:48px 0 24px}
+.ft-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:32px}
+.ft h4{color:#fff;font-size:14px;font-weight:600;margin-bottom:16px}
+.ft p{font-size:13px;line-height:1.7}
+.ft a{font-size:13px;color:rgba(255,255,255,.5);display:block;margin-bottom:8px;transition:color var(--trs)}
+.ft a:hover{color:#fff}
+.ft-bot{border-top:1px solid rgba(255,255,255,.08);padding-top:20px;text-align:center;font-size:12px;color:rgba(255,255,255,.3)}
+
+/* ============================================================
+   COMMON
+   ============================================================ */
+.em{text-align:center;padding:48px 24px;color:var(--t3);font-size:14px}
+.lmr{text-align:center;margin-top:28px}
+.blm{padding:10px 36px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--rf);font-size:14px;color:var(--t2);cursor:pointer;transition:all var(--trs)}
+.blm:hover{border-color:var(--p);color:var(--p);background:var(--pl)}
+.blm:disabled{opacity:.5;cursor:not-allowed}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:9999px}
+
+</style>
+</head>
+<body>
+
+<!-- ==================== TOP NAVIGATION ==================== -->
+<nav class="tn">
+  <div class="nc">
+    <a href="/" class="ln">
+      <span class="lm">H</span>
+      <span class="lt">黑马点评</span>
+    </a>
+    <div class="nl">
+      <a href="#" class="nlg">首页</a>
+      <a href="#">发现</a>
+      <a href="#">优惠券</a>
+      <a href="#">笔记</a>
+    </div>
+    <div class="ns">
+      <svg class="si" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="sf" id="navSearch" placeholder="搜索店铺、地点或美食..." autocomplete="off">
+      <div class="sd" id="searchDropdown"></div>
+    </div>
+    <div class="na">
+      <a href="/customer-service.html" class="nb nba" target="_blank">AI 客服</a>
+      <a href="javascript:void(0)" class="nb" id="btnLogin">登录 / 注册</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ==================== HERO ==================== -->
+<section class="hero">
+  <div class="hc">
+    <h1>发现身边好店，开启美食之旅</h1>
+    <p>黑马点评汇聚全城优质商户，真实用户点评，AI 智能推荐，帮你找到最合适的好去处</p>
+    <div class="hs">
+      <input id="heroSearch" placeholder="搜索店铺、菜系、商圈...">
+      <button id="heroSearchBtn">🔍 搜索</button>
+    </div>
+    <div class="hsb">
+      <div class="hstat"><div class="n" id="statShops">--</div><div class="l">入驻商户</div></div>
+      <div class="hstat"><div class="n" id="statBlogs">--</div><div class="l">探店笔记</div></div>
+      <div class="hstat"><div class="n" id="statUsers">--</div><div class="l">活跃用户</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== CATEGORIES ==================== -->
+<section class="cat-sec">
+  <div class="ct">
+    <div class="cat-grid" id="categoryGrid">
+      <div class="cat-item skel" style="width:80px;height:42px"></div>
+      <div class="cat-item skel" style="width:80px;height:42px"></div>
+      <div class="cat-item skel" style="width:80px;height:42px"></div>
+      <div class="cat-item skel" style="width:80px;height:42px"></div>
+      <div class="cat-item skel" style="width:80px;height:42px"></div>
+      <div class="cat-item skel" style="width:80px;height:42px"></div>
+      <div class="cat-item skel" style="width:80px;height:42px"></div>
+      <div class="cat-item skel" style="width:80px;height:42px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FEATURED SHOPS ==================== -->
+<section class="sec" style="background:var(--bg)">
+  <div class="ct">
+    <div class="sec-header">
+      <h2>🏪 精选商户</h2>
+      <p>发现附近最受欢迎的美食与商铺</p>
+    </div>
+    <div class="shop-grid" id="shopGrid">
+      <div class="sc skel"></div><div class="sc skel"></div><div class="sc skel"></div>
+      <div class="sc skel"></div><div class="sc skel"></div><div class="sc skel"></div>
+    </div>
+    <div class="lmr" id="shopLoadMore" style="display:none">
+      <button class="blm" id="btnShopMore">浏览更多商户 &rarr;</button>
+    </div>
+    <div class="em" id="shopEmpty" style="display:none">暂无商户信息</div>
+  </div>
+</section>
+
+<!-- ==================== HOT BLOGS ==================== -->
+<section class="sec" style="background:var(--b2)">
+  <div class="ct">
+    <div class="sec-header">
+      <h2>📝 热门笔记</h2>
+      <p>真实用户的探店体验与美食分享</p>
+    </div>
+    <div class="blog-grid" id="blogList">
+      <div class="bc-skel"></div><div class="bc-skel"></div><div class="bc-skel"></div>
+      <div class="bc-skel"></div><div class="bc-skel"></div><div class="bc-skel"></div>
+    </div>
+    <div class="em" id="blogEmpty" style="display:none">暂无热门笔记</div>
+  </div>
+</section>
+
+<!-- ==================== AI CUSTOMER SERVICE ==================== -->
+<section class="cs-sec" id="csSection">
+  <div class="ct">
+    <div class="cs-wrap">
+      <!-- Left: promo -->
+      <div class="cs-left">
+        <h2>🤖 AI 智能客服</h2>
+        <p>遇见任何问题？让 AI 助手「小点」帮你。查询商户信息、优惠券活动、订单状态，甚至帮你推荐好吃的——随时随地，有问必答。</p>
+        <div class="cs-features">
+          <div class="cs-feat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 智能搜索商户，按菜系、位置、评分精准推荐</div>
+          <div class="cs-feat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 查询优惠券与秒杀活动，不再错过折扣</div>
+          <div class="cs-feat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 查看订单状态、热门笔记，一站式服务</div>
+        </div>
+        <a href="/customer-service.html" class="btn-open" target="_blank">
+          打开全屏客服 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </a>
+      </div>
+      <!-- Right: embedded chat panel -->
+      <div class="cs-panel" id="chatPanel">
+        <div class="cs-ph"><span>🤖</span><div><h3>AI 智能客服</h3><p>随时为您解答</p></div></div>
+        <div class="cs-pbd" id="chatBody">
+          <div class="cpwelcome" id="chatWelcome">
+            <p class="cpwi">🤖</p>
+            <p class="cpwt">您好，我是小点</p>
+            <p class="cpwd">可以帮您查询商户、优惠券、订单等信息</p>
+            <div class="cpq" id="chatQuickAsks">
+              <button class="cq">帮我查一下火锅店</button>
+              <button class="cq">附近有什么好吃的</button>
+              <button class="cq">有什么优惠券活动</button>
+              <button class="cq">最近的热门探店笔记</button>
+            </div>
+          </div>
+          <div class="cspm" id="chatMessages" style="display:none"></div>
+        </div>
+        <div class="cspi">
+          <input id="chatInput" placeholder="输入问题..." autocomplete="off">
+          <button id="btnChatSend" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="ft">
+  <div class="ct">
+    <div class="ft-grid">
+      <div>
+        <h4>🏪 黑马点评</h4>
+        <p>发现身边好店，开启美食之旅。真实用户点评，AI 智能推荐，让你每次选择都靠谱。</p>
+      </div>
+      <div>
+        <h4>探索</h4>
+        <a href="#">附近商户</a><a href="#">热门笔记</a><a href="#">优惠券</a><a href="#">秒杀活动</a>
+      </div>
+      <div>
+        <h4>服务</h4>
+        <a href="/customer-service.html" target="_blank">AI 客服</a><a href="#">帮助中心</a><a href="#">商家入驻</a><a href="#">用户协议</a>
+      </div>
+      <div>
+        <h4>关于</h4>
+        <a href="#">关于我们</a><a href="#">隐私政策</a><a href="#">联系方式</a>
+      </div>
+    </div>
+    <div class="ft-bot">&copy; 2026 黑马点评 · 实验性项目 · AI 驱动的新一代本地生活服务平台</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+var S={
+  categories:[],activeCat:'all',shops:[],shopPage:1,shopHasMore:true,shopLoading:false,
+  blogs:[],blogLoading:false,
+  msg:[],stream:false,si:-1,cid:null
+};
+var E={};
+function cd(){E.navSearch=document.getElementById('navSearch');E.heroSearch=document.getElementById('heroSearch');E.searchDropdown=document.getElementById('searchDropdown');E.categoryGrid=document.getElementById('categoryGrid');E.shopGrid=document.getElementById('shopGrid');E.shopLoadMore=document.getElementById('shopLoadMore');E.shopEmpty=document.getElementById('shopEmpty');E.btnShopMore=document.getElementById('btnShopMore');E.blogList=document.getElementById('blogList');E.blogEmpty=document.getElementById('blogEmpty');E.chatBody=document.getElementById('chatBody');E.chatWelcome=document.getElementById('chatWelcome');E.chatMessages=document.getElementById('chatMessages');E.chatInput=document.getElementById('chatInput');E.btnChatSend=document.getElementById('btnChatSend');E.statShops=document.getElementById('statShops');E.statBlogs=document.getElementById('statBlogs');E.statUsers=document.getElementById('statUsers')}
+function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):''}
+function fmt(ts){if(!ts)return'';var d=Date.now()-new Date(ts).getTime();if(d<6e4)return'刚刚';if(d<36e5)return Math.floor(d/6e4)+'分钟前';if(d<864e5)return Math.floor(d/36e5)+'小时前';return(new Date(ts).getMonth()+1)+'-'+new Date(ts).getDate()}
+function dimg(s){return s?s.split(',').filter(Boolean):[]}
+function api(url){return fetch(url).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).catch(function(e){console.error(e);return{success:false}})}
+
+/* Categories */
+function lc(){api('/shop-type/list').then(function(r){if(r.success&&r.data)S.categories=r.data;renderCats()})}
+function renderCats(){if(!S.categories.length)return;var icons=['🍜','☕','🛒','🎮','🏨','🎬','💄','📚','🏥','🛹'];var h='<button class="cat-item act" data-type="all">全部</button>';for(var i=0;i<S.categories.length;i++){var c=S.categories[i];h+='<button class="cat-item" data-type="'+c.id+'"><span class="cat-icon">'+(c.icon||icons[i%icons.length])+'</span>'+esc(c.name)+'</button>'}E.categoryGrid.innerHTML=h;E.categoryGrid.onclick=function(e){var it=e.target.closest('.cat-item');if(!it)return;var t=it.getAttribute('data-type');if(t!==S.activeCat){S.activeCat=t;S.shopPage=1;S.shops=[];S.shopHasMore=true;var is=E.categoryGrid.querySelectorAll('.cat-item');for(var j=0;j<is.length;j++)is[j].classList.toggle('act',is[j].getAttribute('data-type')===t);loadShops()}}}
+
+/* Shops */
+function loadShops(){if(S.shopLoading)return;S.shopLoading=true;if(S.shopPage===1){var sk='';for(var i=0;i<6;i++)sk+='<div class="sc skel"></div>';E.shopGrid.innerHTML=sk}var url=S.activeCat==='all'?'/shop/of/type?typeId=&current='+S.shopPage:'/shop/of/type?typeId='+S.activeCat+'&current='+S.shopPage;api(url).then(function(r){S.shopLoading=false;if(r.success&&r.data){var inc=r.data;S.shops=S.shopPage===1?inc:S.shops.concat(inc);S.shopHasMore=inc.length>=6}renderShops()})}
+function simg(s){var im=dimg(s.images);if(im.length)return im[0];return 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="170" fill="#e2e8f0"><rect width="300" height="170"/><text x="150" y="94" text-anchor="middle" fill="#94a3b8" font-size="48">🍽</text></svg>')}
+function renderShops(){if(!S.shops.length&&!S.shopLoading){E.shopGrid.innerHTML='';E.shopEmpty.style.display='';E.shopLoadMore.style.display='none';return}E.shopEmpty.style.display='none';E.shopGrid.innerHTML=S.shops.map(function(s){var sc=(s.score||0)/10;var sh=sc>0?'<span class="scs"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'+sc.toFixed(1)+'</span>':'';var tags=s.avgPrice?'<span>¥'+s.avgPrice+'/人</span>':'';if(s.distance)tags+='<span>'+(s.distance<1000?s.distance+'m':(s.distance/1000).toFixed(1)+'km')+'</span>';return '<div class="sc"><img class="scimg" src="'+simg(s)+'" alt="'+esc(s.name)+'" loading="lazy"><div class="scbd"><div class="scn"><span class="scnm">'+esc(s.name)+'</span>'+sh+'</div><div class="scm">'+(s.area?'<span class="scma">'+esc(s.area)+'</span>':'')+'<span class="scmc">'+(s.comments||0)+'条点评</span></div>'+(tags?'<div class="scmt">'+tags+'</div>':'')+'</div></div>'}).join('');E.shopLoadMore.style.display=S.shopHasMore?'':'none'}
+
+/* Blogs */
+function loadBlogs(){if(S.blogLoading)return;S.blogLoading=true;var sk='';for(var i=0;i<6;i++)sk+='<div class="bc-skel"></div>';E.blogList.innerHTML=sk;api('/blog/hot?current=1').then(function(r){S.blogLoading=false;if(r.success&&r.data)S.blogs=r.data;renderBlogs()})}
+function renderBlogs(){if(!S.blogs.length){E.blogList.innerHTML='';E.blogEmpty.style.display='';return}E.blogEmpty.style.display='none';E.blogList.innerHTML=S.blogs.map(function(b){return '<div class="bc">'+(b.icon?'<img class="bca" src="'+esc(b.icon)+'" alt="" loading="lazy">':'<div class="bca"></div>')+'<div class="bcb"><div class="bch"><span class="bchn">'+esc(b.name||'用户')+'</span><span class="bcht">'+fmt(b.createTime)+'</span></div><div class="bcti">'+esc(b.title||'')+'</div><div class="bcco">'+esc((b.content||'').substring(0,120))+'</div><div class="bcf"><span class="bsi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>'+(b.liked||0)+'</span><span class="bsi"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'+(b.comments||0)+'</span></div></div></div>'}).join('')}
+
+/* Search */
+var st=null,sa=null;
+function search(q){q=(q||'').trim();if(!q){E.searchDropdown.classList.remove('v');return}if(sa)sa.abort();sa=new AbortController();fetch('/shop/of/name?name='+encodeURIComponent(q)+'&current=1',{signal:sa.signal}).then(function(r){return r.json()}).then(function(r){if(r.success&&r.data&&r.data.length)renderSearch(r.data.slice(0,6));else{E.searchDropdown.innerHTML='<div style="padding:16px;text-align:center;color:var(--t3);font-size:13px">未找到相关店铺</div>';E.searchDropdown.classList.add('v')}}).catch(function(e){if(e.name!=='AbortError')E.searchDropdown.classList.remove('v')})}
+function renderSearch(shops){E.searchDropdown.innerHTML=shops.map(function(s){return '<div class="sri"><img class="srimg" src="'+simg(s)+'" alt="" loading="lazy"><div class="srin"><div class="srname">'+esc(s.name)+'</div><div class="srmeta">'+(s.area?esc(s.area)+' · ':'')+(s.avgPrice?'¥'+s.avgPrice+'/人':'')+'</div></div></div>'}).join('');E.searchDropdown.classList.add('v')}
+document.addEventListener('click',function(e){if(!E.navSearch.contains(e.target)&&!E.searchDropdown.contains(e.target))E.searchDropdown.classList.remove('v')});
+
+/* ===== CHAT ===== */
+function addMsg(role,type,extra){var m={role:role,type:type||'text',content:''};if(extra)for(var k in extra)m[k]=extra[k];S.msg.push(m);return S.msg.length-1}
+function renderChat(ct){var h='';for(var i=0;i<S.msg.length;i++){var m=S.msg[i];if(m.type==='tool_call')h+='<div class="msg a"><div class="mb"><div class="tc"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 正在查询: '+esc(m.toolName||'')+'</div></div></div>';else if(m.type==='tool_result'){var ex=m.expanded!==false;h+='<div class="msg a"><div class="mb"><div class="trh" data-toggle="'+i+'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> 查询完成: '+esc(m.toolName||'')+'</div><div class="trb" style="display:'+(ex?'block':'none')+'">'+esc(m.content||'')+'</div></div></div>'}else{var c=esc(m.content||'').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');h+='<div class="msg '+(m.role==='user'?'u':'a')+'"><div class="ma">'+(m.role==='user'?'👤':'🤖')+'</div><div class="mb">'+c+'</div></div>'}}if(S.stream)h+='<div class="msg a"><div class="ma">🤖</div><div class="mb"><div class="td"><span class="d"></span><span class="d"></span><span class="d"></span></div></div></div>';ct.innerHTML=h;var hs=ct.querySelectorAll('.trh');for(var j=0;j<hs.length;j++)hs[j].onclick=(function(idx){return function(){if(S.msg[idx]){S.msg[idx].expanded=S.msg[idx].expanded===false?true:false;renderAll()}}})(parseInt(hs[j].getAttribute('data-toggle')))}
+function renderAll(){var hm=S.msg.length>0||S.stream;if(hm){E.chatWelcome.style.display='none';E.chatMessages.style.display='';renderChat(E.chatMessages)}else{E.chatWelcome.style.display='';E.chatMessages.style.display='none'}scrollChat()}
+function scrollChat(){requestAnimationFrame(function(){E.chatBody.scrollTop=E.chatBody.scrollHeight})}
+function ub(){E.btnChatSend.disabled=!E.chatInput.value.trim()||S.stream}
+function sendMsg(text,ie){var msg=(text||(ie?ie.value:'')).trim();if(!msg||S.stream)return;if(ie)ie.value='';ub();S.stream=true;S.si=-1;addMsg('user','text',{content:msg});renderAll();fetch('/api/cs/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,conversationId:S.cid||null})}).then(function(r){if(!r.ok)throw Error('HTTP '+r.status);return readSse(r)}).catch(function(e){addMsg('assistant','text',{content:'抱歉，请求失败: '+e.message});finish()})}
+function readSse(resp){var rd=resp.body.getReader(),dc=new TextDecoder(),buf='';function pump(){return rd.read().then(function(r){if(r.done){if(buf.trim())pBuf(buf);finish();return}buf+=dc.decode(r.value,{stream:true});var ps=buf.split('\n\n');buf=ps.pop()||'';for(var i=0;i<ps.length;i++)pBlock(ps[i]);return pump()})}return pump()}
+function pBlock(block){if(!block||!block.trim())return;var ls=block.split('\n'),evt='message',data='';for(var i=0;i<ls.length;i++){var l=ls[i];if(l.indexOf('event:')===0)evt=l.substring(6).trim();else if(l.indexOf('data:')===0)data=l.substring(5).trim()}if(!data)return;try{handle(evt,JSON.parse(data))}catch(e){if(evt==='text'||evt==='message')append(data)}}
+function pBuf(buf){var ls=buf.split('\n');for(var i=0;i<ls.length;i++){var l=ls[i];if(l.indexOf('data:')===0){var ds=l.substring(5).trim();if(!ds)continue;try{var p=JSON.parse(ds);if(p.content)append(p.content)}catch(e){append(ds)}}}}
+function handle(evt,data){switch(evt){case'text':case'message':if(data.content)append(data.content);break;case'tool_call':addMsg('assistant','tool_call',{toolName:data.tool||data.toolName||''});renderAll();break;case'tool_result':addMsg('assistant','tool_result',{toolName:data.tool||data.toolName||'',content:typeof data.result==='string'?data.result:JSON.stringify(data.result,null,2),expanded:false});renderAll();break;case'meta':if(data.conversationId&&!S.cid)S.cid=data.conversationId;break;case'error':addMsg('assistant','text',{content:data.message||'请求出错'});finish();break}}
+function append(chunk){if(typeof chunk!=='string'||!chunk)return;if(S.si<0)S.si=addMsg('assistant','text',{content:''});S.msg[S.si].content+=chunk;renderAll()}
+function finish(){S.stream=false;S.si=-1;renderAll();ub()}
+
+/* Init */
+function bind(){
+  E.navSearch.addEventListener('input',function(){clearTimeout(st);var t=this;st=setTimeout(function(){search(t.value)},300)});
+  E.navSearch.addEventListener('keydown',function(e){if(e.key==='Escape'){E.searchDropdown.classList.remove('v');this.blur()}});
+  E.heroSearch.addEventListener('input',function(){clearTimeout(st);var t=this;st=setTimeout(function(){search(t.value)},300)});
+  E.heroSearch.addEventListener('keydown',function(e){if(e.key==='Enter')search(this.value)});
+  document.getElementById('heroSearchBtn').addEventListener('click',function(){search(E.heroSearch.value)});
+  E.btnShopMore.addEventListener('click',function(){S.shopPage++;loadShops()});
+  E.chatInput.addEventListener('input',ub);
+  E.chatInput.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMsg(null,E.chatInput)}});
+  E.btnChatSend.addEventListener('click',function(){sendMsg(null,E.chatInput)});
+  var dcs=document.querySelectorAll('#chatQuickAsks .cq');for(var i=0;i<dcs.length;i++)dcs[i].addEventListener('click',function(){sendMsg(this.textContent.trim(),E.chatInput)});
+}
+function init(){cd();bind();lc();loadShops();loadBlogs();E.statShops.textContent='2000+';E.statBlogs.textContent='5000+';E.statUsers.textContent='10000+'}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>

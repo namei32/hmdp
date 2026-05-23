@@ -1,10 +1,9 @@
 package com.hmdp.ai.tool;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,9 +14,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ToolRegistry {
 
     private final Map<String, McpTool> tools = new ConcurrentHashMap<>();
+    private final List<McpTool> toolBeans;
 
-    @Autowired
-    private List<McpTool> toolBeans;
+    public ToolRegistry(List<McpTool> toolBeans) {
+        this.toolBeans = toolBeans;
+    }
 
     @PostConstruct
     public void init() {

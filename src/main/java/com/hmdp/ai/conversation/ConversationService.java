@@ -4,13 +4,11 @@ import cn.hutool.json.JSONUtil;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 public class ConversationService {
@@ -19,8 +17,11 @@ public class ConversationService {
     private static final String CONV_LIST_PREFIX = "cs:conv:list:";
     private static final long CONV_TTL_SECONDS = 1800; // 30 minutes
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    public ConversationService(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
 
     public Conversation createConversation(Long userId) {
         String id = "conv_" + UUID.randomUUID().toString().substring(0, 8);
@@ -33,7 +34,9 @@ public class ConversationService {
     public Conversation getConversation(String convId) {
         String key = CONV_KEY_PREFIX + convId;
         String json = stringRedisTemplate.opsForValue().get(key);
-        if (json == null) return null;
+        if (json == null) {
+            return null;
+        }
         return JSONUtil.toBean(json, Conversation.class);
     }
 
@@ -52,19 +55,25 @@ public class ConversationService {
         String listKey = CONV_LIST_PREFIX + userId;
         Set<String> convIds = stringRedisTemplate.opsForZSet()
                 .reverseRange(listKey, 0, 49); // last 50
-        if (convIds == null || convIds.isEmpty()) return new ArrayList<>();
+        if (convIds == null || convIds.isEmpty()) {
+            return new ArrayList<>();
+        }
 
         List<Conversation> convs = new ArrayList<>();
         for (String convId : convIds) {
             Conversation conv = getConversation(convId);
-            if (conv != null) convs.add(conv);
+            if (conv != null) {
+                convs.add(conv);
+            }
         }
         convs.sort((a, b) -> Long.compare(b.getLastActiveAt(), a.getLastActiveAt()));
         return convs;
     }
 
     private void addToUserList(Long userId, String convId) {
-        if (userId == null) return;
+        if (userId == null) {
+            return;
+        }
         stringRedisTemplate.opsForZSet().add(CONV_LIST_PREFIX + userId, convId, System.currentTimeMillis());
     }
 }

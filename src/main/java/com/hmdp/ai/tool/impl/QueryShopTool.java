@@ -1,18 +1,18 @@
 package com.hmdp.ai.tool.impl;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONUtil;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.hmdp.ai.tool.ToolUtils;
 import com.hmdp.ai.tool.McpTool;
 import com.hmdp.ai.tool.ToolDefinition;
+import com.hmdp.ai.tool.ToolJsonUtils;
 import com.hmdp.ai.tool.ToolResult;
+import com.hmdp.ai.tool.ToolUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.entity.Shop;
 import com.hmdp.service.IShopService;
 import com.hmdp.utils.SystemConstants;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +20,11 @@ import java.util.Map;
 @Component
 public class QueryShopTool implements McpTool {
 
-    @Resource
-    private IShopService shopService;
+    private final IShopService shopService;
+
+    public QueryShopTool(IShopService shopService) {
+        this.shopService = shopService;
+    }
 
     @Override
     public ToolDefinition getDefinition() {
@@ -56,14 +59,20 @@ public class QueryShopTool implements McpTool {
             switch (action) {
                 case "query_by_id": {
                     Long shopId = toLong(args.get("shopId"));
-                    if (shopId == null) return ToolResult.fail("shopId 参数不能为空");
+                    if (shopId == null) {
+                        return ToolResult.fail("shopId 参数不能为空");
+                    }
                     Shop shop = shopService.getById(shopId);
-                    if (shop == null) return ToolResult.ok("未找到该商户");
+                    if (shop == null) {
+                        return ToolResult.ok(ToolJsonUtils.empty("shop_detail", "未找到该商户"));
+                    }
                     return ToolResult.ok(formatShop(shop));
                 }
                 case "query_by_name": {
                     String name = (String) args.get("name");
-                    if (StrUtil.isBlank(name)) return ToolResult.fail("name 参数不能为空");
+                    if (StrUtil.isBlank(name)) {
+                        return ToolResult.fail("name 参数不能为空");
+                    }
                     Page<Shop> page = shopService.query()
                             .like("name", name)
                             .page(new Page<>(current, pageSize));
@@ -71,7 +80,9 @@ public class QueryShopTool implements McpTool {
                 }
                 case "query_by_type": {
                     Integer typeId = toInt(args.get("typeId"));
-                    if (typeId == null) return ToolResult.fail("typeId 参数不能为空");
+                    if (typeId == null) {
+                        return ToolResult.fail("typeId 参数不能为空");
+                    }
                     Page<Shop> page = shopService.query()
                             .eq("type_id", typeId)
                             .orderByDesc("score")
@@ -82,7 +93,9 @@ public class QueryShopTool implements McpTool {
                     Double x = toDouble(args.get("x"));
                     Double y = toDouble(args.get("y"));
                     Integer typeId = toInt(args.get("typeId"));
-                    if (x == null || y == null) return ToolResult.fail("x, y 参数不能为空");
+                    if (x == null || y == null) {
+                        return ToolResult.fail("x, y 参数不能为空");
+                    }
                     // delegate to existing geo search
                     com.hmdp.dto.Result result = shopService.queryShopByType(
                             typeId != null ? typeId : 1, current, x, y);
@@ -91,7 +104,7 @@ public class QueryShopTool implements McpTool {
                         List<Shop> shops = (List<Shop>) result.getData();
                         return ToolResult.ok(formatShopList(shops, shops.size()));
                     }
-                    return ToolResult.ok("未找到附近商户");
+                    return ToolResult.ok(ToolJsonUtils.empty("shop_list", "未找到附近商户"));
                 }
                 default:
                     return ToolResult.fail("不支持的操作: " + action + "，支持: query_by_id, query_by_name, query_by_type, query_nearby");
@@ -101,49 +114,82 @@ public class QueryShopTool implements McpTool {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private String formatShopList(List<Shop> shops, long total) {
-        if (shops == null || shops.isEmpty()) return "未找到匹配的商户";
-        StringBuilder sb = new StringBuilder();
-        sb.append("找到 ").append(total).append(" 家商户:\n");
-        int idx = 1;
-        for (Shop s : shops) {
-            sb.append(idx++).append(". ").append(s.getName())
-                    .append(" | 评分:").append(s.getScore() != null ? s.getScore() / 10.0 : "暂无")
-                    .append(" | 均价:¥").append(s.getAvgPrice() != null ? s.getAvgPrice() : "暂无")
-                    .append(" | 地址:").append(s.getAddress() != null ? s.getAddress() : "暂无")
-                    .append(" | ID:").append(s.getId()).append("\n");
+        if (shops == null || shops.isEmpty()) {
+            return ToolJsonUtils.empty("shop_list", "未找到匹配的商户");
         }
-        return sb.toString();
+        List<Map<String, Object>> items = new ArrayList<>(shops.size());
+        for (Shop s : shops) {
+            Map<String, Object> item = ToolJsonUtils.object(
+                    "id", s.getId(),
+                    "name", s.getName(),
+                    "score", s.getScore() != null ? s.getScore() / 10.0 : null,
+                    "avgPrice", s.getAvgPrice(),
+                    "address", s.getAddress()
+            );
+            ToolJsonUtils.putIfNotNull(item, "area", s.getArea());
+            ToolJsonUtils.putIfNotNull(item, "distance", s.getDistance());
+            items.add(item);
+        }
+        return ToolJsonUtils.list("shop_list", total, items);
     }
 
     private String formatShop(Shop s) {
-        return s.getName() +
-                " | 评分:" + (s.getScore() != null ? s.getScore() / 10.0 : "暂无") +
-                " | 均价:¥" + (s.getAvgPrice() != null ? s.getAvgPrice() : "暂无") +
-                " | 商圈:" + (s.getArea() != null ? s.getArea() : "暂无") +
-                " | 地址:" + (s.getAddress() != null ? s.getAddress() : "暂无") +
-                " | 营业时间:" + (s.getOpenHours() != null ? s.getOpenHours() : "暂无") +
-                " | 销量:" + (s.getSold() != null ? s.getSold() : 0) +
-                " | 评论数:" + (s.getComments() != null ? s.getComments() : 0) +
-                " | ID:" + s.getId();
+        Map<String, Object> data = ToolJsonUtils.object(
+                "id", s.getId(),
+                "name", s.getName(),
+                "typeId", s.getTypeId(),
+                "score", s.getScore() != null ? s.getScore() / 10.0 : null,
+                "avgPrice", s.getAvgPrice(),
+                "area", s.getArea(),
+                "address", s.getAddress(),
+                "openHours", s.getOpenHours(),
+                "sold", s.getSold() != null ? s.getSold() : 0,
+                "comments", s.getComments() != null ? s.getComments() : 0
+        );
+        ToolJsonUtils.putIfNotNull(data, "distance", s.getDistance());
+        return ToolJsonUtils.detail("shop_detail", data);
     }
 
     private Long toLong(Object val) {
-        if (val == null) return null;
-        if (val instanceof Number) return ((Number) val).longValue();
-        try { return Long.valueOf(val.toString()); } catch (NumberFormatException e) { return null; }
+        if (val == null) {
+            return null;
+        }
+        if (val instanceof Number number) {
+            return number.longValue();
+        }
+        try {
+            return Long.valueOf(val.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private Integer toInt(Object val) {
-        if (val == null) return null;
-        if (val instanceof Number) return ((Number) val).intValue();
-        try { return Integer.valueOf(val.toString()); } catch (NumberFormatException e) { return null; }
+        if (val == null) {
+            return null;
+        }
+        if (val instanceof Number number) {
+            return number.intValue();
+        }
+        try {
+            return Integer.valueOf(val.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private Double toDouble(Object val) {
-        if (val == null) return null;
-        if (val instanceof Number) return ((Number) val).doubleValue();
-        try { return Double.valueOf(val.toString()); } catch (NumberFormatException e) { return null; }
+        if (val == null) {
+            return null;
+        }
+        if (val instanceof Number number) {
+            return number.doubleValue();
+        }
+        try {
+            return Double.valueOf(val.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

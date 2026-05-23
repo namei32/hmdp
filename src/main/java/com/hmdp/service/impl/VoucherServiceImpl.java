@@ -8,15 +8,15 @@ import com.hmdp.entity.Voucher;
 import com.hmdp.mapper.VoucherMapper;
 import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherService;
-import com.hmdp.utils.CacheClinet;
+import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -28,17 +28,21 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> implements IVoucherService {
-    @Resource
-    private ISeckillVoucherService seckillVoucherService;
+    private final ISeckillVoucherService seckillVoucherService;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final CacheClient cacheClient;
+    private final Cache<Long, List<Voucher>> voucherListLocalCache;
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
-
-    @Resource
-    private CacheClinet cacheClinet;
-
-    @Resource(name = "voucherListLocalCache")
-    private Cache<Long, List<Voucher>> voucherListLocalCache;
+    public VoucherServiceImpl(
+            ISeckillVoucherService seckillVoucherService,
+            StringRedisTemplate stringRedisTemplate,
+            CacheClient cacheClient,
+            @Qualifier("voucherListLocalCache") Cache<Long, List<Voucher>> voucherListLocalCache) {
+        this.seckillVoucherService = seckillVoucherService;
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.cacheClient = cacheClient;
+        this.voucherListLocalCache = voucherListLocalCache;
+    }
 
     @Override
     public boolean save(Voucher voucher) {
@@ -62,7 +66,7 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
 
         long ttlMinutes = RedisConstants.CACHE_VOUCHER_LIST_TTL
                 + ThreadLocalRandom.current().nextLong(0, RedisConstants.CACHE_VOUCHER_LIST_TTL_JITTER + 1);
-        List<Voucher> vouchers = cacheClinet.queryWithPassThroughList(
+        List<Voucher> vouchers = cacheClient.queryWithPassThroughList(
                 RedisConstants.CACHE_VOUCHER_LIST_KEY,
                 shopId,
                 Voucher.class,

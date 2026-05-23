@@ -1,0 +1,40 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${HMDP_DB_URL:jdbc:mysql://127.0.0.1:3306/hmdp?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true}
+    username: ${HMDP_DB_USERNAME:root}
+    password: ${HMDP_DB_PASSWORD:}
+  data:
+    redis:
+      host: ${HMDP_REDIS_HOST:127.0.0.1}
+      port: ${HMDP_REDIS_PORT:6379}
+      password: ${HMDP_REDIS_PASSWORD:}
+      lettuce:
+        pool:
+          max-active: ${HMDP_REDIS_POOL_MAX_ACTIVE:10}
+          max-idle: ${HMDP_REDIS_POOL_MAX_IDLE:10}
+          min-idle: ${HMDP_REDIS_POOL_MIN_IDLE:1}
+          time-between-eviction-runs: ${HMDP_REDIS_POOL_EVICTION_RUNS:10s}
+  kafka:
+    bootstrap-servers: ${HMDP_KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}
+    admin:
+      fail-fast: false
+    producer:
+      acks: all
+      retries: ${HMDP_KAFKA_PRODUCER_RETRIES:3}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+    consumer:
+      auto-offset-reset: latest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.hmdp.event,com.hmdp.entity
+    listener:
+      missing-topics-fatal: false
+
+logging:
+  level:
+    com.hmdp: ${HMDP_DEV_LOG_LEVEL:debug}

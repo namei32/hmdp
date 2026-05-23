@@ -2,16 +2,17 @@ package com.hmdp;
 
 import com.hmdp.entity.Shop;
 import com.hmdp.service.impl.ShopServiceImpl;
-import com.hmdp.utils.CacheClinet;
+import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.RedisIdWorker;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -20,6 +21,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Slf4j
+@Disabled("Requires local MySQL and Redis; run manually when infrastructure is available.")
 @SpringBootTest
 class HmDianPingApplicationTests {
     @Resource
@@ -31,12 +34,12 @@ class HmDianPingApplicationTests {
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource
-    private CacheClinet cacheClinet;
-    private ExecutorService executorService = Executors.newFixedThreadPool(500);
+    private CacheClient cacheClient;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(500);
     // @Test
     // void testSaveShop() throws InterruptedException {
     // Shop shop = shopService.getById(1L);
-    // cacheClinet.setWithLogicalExpire(RedisConstants.CACHE_SHOP_KEY+1l,shop,10L,
+    // cacheClient.setWithLogicalExpire(RedisConstants.CACHE_SHOP_KEY + 1L, shop, 10L,
     // TimeUnit.SECONDS);
     // }
     @Resource
@@ -48,7 +51,7 @@ class HmDianPingApplicationTests {
         Runnable task = () -> {
             for (int i = 0; i < 100; i++) {
                 long id = redisIdWorker.nextId("order");
-                System.out.println("生成的id为:" + id);
+                log.info("生成的id为: {}", id);
             }
             countDownLatch.countDown();
         };
@@ -59,10 +62,11 @@ class HmDianPingApplicationTests {
         try {
             countDownLatch.await();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("等待 ID 生成任务完成时被中断", e);
         }
         long end = System.currentTimeMillis();
-        System.out.println("总耗时:" + (end - begin) + "毫秒");
+        log.info("总耗时: {} 毫秒", end - begin);
     }
 
     @Test
@@ -82,13 +86,12 @@ class HmDianPingApplicationTests {
     @Test
     void testSaveShop() {
         Shop shop = shopService.getById(1L);
-        cacheClinet.setWithLogicalExpire(
+        cacheClient.setWithLogicalExpire(
                 RedisConstants.CACHE_SHOP_KEY + 1L, // 拼接 Key，例如 cache:shop:1
                 shop,
                 10L,
                 TimeUnit.SECONDS);
 
-        System.out.println("店铺缓存预热成功！");
+        log.info("店铺缓存预热成功");
     }
-
 }

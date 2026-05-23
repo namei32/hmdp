@@ -13,8 +13,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2021-12-22
  */
 public interface IShopService extends IService<Shop> {
-    public Result queryShopById(Long id);
-    public Result update(Shop shop);
+    Result queryShopById(Long id);
+
+    Result update(Shop shop);
 
     Result queryShopByType(Integer typeId, Integer current, Double x, Double y);
 }

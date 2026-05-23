@@ -5,6 +5,7 @@ import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.Voucher;
 import com.hmdp.mapper.VoucherMapper;
 import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,15 +38,18 @@ class VoucherServiceImplTest {
     @Mock
     private StringRedisTemplate stringRedisTemplate;
     @Mock
+    private CacheClient cacheClient;
+    @Mock
     private Cache<Long, List<Voucher>> voucherListLocalCache;
 
     @BeforeEach
     void setUp() {
-        voucherService = org.mockito.Mockito.spy(new VoucherServiceImpl());
+        voucherService = org.mockito.Mockito.spy(new VoucherServiceImpl(
+                seckillVoucherService,
+                stringRedisTemplate,
+                cacheClient,
+                voucherListLocalCache));
         ReflectionTestUtils.setField(voucherService, "baseMapper", voucherMapper);
-        ReflectionTestUtils.setField(voucherService, "seckillVoucherService", seckillVoucherService);
-        ReflectionTestUtils.setField(voucherService, "stringRedisTemplate", stringRedisTemplate);
-        ReflectionTestUtils.setField(voucherService, "voucherListLocalCache", voucherListLocalCache);
     }
 
     @Test

@@ -1,10 +1,11 @@
 package com.hmdp.ai.tool.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.hmdp.ai.tool.ToolUtils;
 import com.hmdp.ai.tool.McpTool;
 import com.hmdp.ai.tool.ToolDefinition;
+import com.hmdp.ai.tool.ToolJsonUtils;
 import com.hmdp.ai.tool.ToolResult;
+import com.hmdp.ai.tool.ToolUtils;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.User;
 import com.hmdp.entity.UserInfo;
@@ -13,19 +14,19 @@ import com.hmdp.service.IUserService;
 import com.hmdp.utils.UserHolder;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @Component
 public class QueryUserTool implements McpTool {
 
-    @Resource
-    private IUserService userService;
+    private final IUserService userService;
+    private final IUserInfoService userInfoService;
 
-    @Resource
-    private IUserInfoService userInfoService;
+    public QueryUserTool(IUserService userService, IUserInfoService userInfoService) {
+        this.userService = userService;
+        this.userInfoService = userInfoService;
+    }
 
     @Override
     public ToolDefinition getDefinition() {
@@ -56,33 +57,37 @@ public class QueryUserTool implements McpTool {
                     }
                     UserDTO currentUser = UserHolder.getUser();
                     UserInfo info = userInfoService.getById(currentUser.getId());
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("当前用户信息:\n");
-                    sb.append("用户ID: ").append(currentUser.getId()).append("\n");
-                    sb.append("昵称: ").append(currentUser.getNickName()).append("\n");
-                    if (currentUser.getIcon() != null) sb.append("头像: ").append(currentUser.getIcon()).append("\n");
+                    Map<String, Object> data = ToolJsonUtils.object(
+                            "id", currentUser.getId(),
+                            "nickName", currentUser.getNickName(),
+                            "icon", currentUser.getIcon()
+                    );
                     if (info != null) {
-                        if (info.getGender() != null) sb.append("性别: ").append(info.getGender() ? "女" : "男").append("\n");
-                        if (info.getBirthday() != null) sb.append("生日: ").append(info.getBirthday()).append("\n");
-                        if (info.getCity() != null) sb.append("城市: ").append(info.getCity()).append("\n");
-                        if (info.getIntroduce() != null) sb.append("简介: ").append(info.getIntroduce()).append("\n");
-                        if (info.getFans() != null) sb.append("粉丝数: ").append(info.getFans()).append("\n");
-                        if (info.getFollowee() != null) sb.append("关注数: ").append(info.getFollowee()).append("\n");
+                        ToolJsonUtils.putIfNotNull(data, "gender", info.getGender() != null ? (info.getGender() ? "女" : "男") : null);
+                        ToolJsonUtils.putIfNotNull(data, "birthday", info.getBirthday());
+                        ToolJsonUtils.putIfNotNull(data, "city", info.getCity());
+                        ToolJsonUtils.putIfNotNull(data, "introduce", info.getIntroduce());
+                        ToolJsonUtils.putIfNotNull(data, "fans", info.getFans());
+                        ToolJsonUtils.putIfNotNull(data, "followee", info.getFollowee());
                     }
-                    return ToolResult.ok(sb.toString());
+                    return ToolResult.ok(ToolJsonUtils.detail("current_user", data));
                 }
                 case "get_user_info": {
                     Long userId = toLong(args.get("userId"));
-                    if (userId == null) return ToolResult.fail("userId 参数不能为空");
+                    if (userId == null) {
+                        return ToolResult.fail("userId 参数不能为空");
+                    }
                     User user = userService.getById(userId);
-                    if (user == null) return ToolResult.ok("未找到该用户");
+                    if (user == null) {
+                        return ToolResult.ok(ToolJsonUtils.empty("user_detail", "未找到该用户"));
+                    }
                     UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("用户信息:\n");
-                    sb.append("用户ID: ").append(userDTO.getId()).append("\n");
-                    sb.append("昵称: ").append(userDTO.getNickName()).append("\n");
-                    if (userDTO.getIcon() != null) sb.append("头像: ").append(userDTO.getIcon()).append("\n");
-                    return ToolResult.ok(sb.toString());
+                    Map<String, Object> data = ToolJsonUtils.object(
+                            "id", userDTO.getId(),
+                            "nickName", userDTO.getNickName(),
+                            "icon", userDTO.getIcon()
+                    );
+                    return ToolResult.ok(ToolJsonUtils.detail("user_detail", data));
                 }
                 default:
                     return ToolResult.fail("不支持的操作: " + action + "，支持: get_my_info, get_user_info");
@@ -93,8 +98,16 @@ public class QueryUserTool implements McpTool {
     }
 
     private Long toLong(Object val) {
-        if (val == null) return null;
-        if (val instanceof Number) return ((Number) val).longValue();
-        try { return Long.valueOf(val.toString()); } catch (NumberFormatException e) { return null; }
+        if (val == null) {
+            return null;
+        }
+        if (val instanceof Number number) {
+            return number.longValue();
+        }
+        try {
+            return Long.valueOf(val.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

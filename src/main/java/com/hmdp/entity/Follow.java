@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 /**
  * <p>
- * 
+ * 用户关注关系。
  * </p>
  *
  * @author 虎哥

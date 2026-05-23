@@ -8,14 +8,17 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "hmdp.ai")
 public class AiConfig {
-    /** Anthropic API key */
-    private String apiKey = "sk-5883cca800084764b2690d877ee1ccfb";
+    /** Whether the AI customer service endpoints are enabled. */
+    private boolean enabled = false;
 
-    /** Anthropic API base URL */
+    /** AI provider API key, read from HMDP_AI_API_KEY by default. */
+    private String apiKey;
+
+    /** AI provider API base URL. */
     private String baseUrl = "https://api.deepseek.com";
 
     /** Model to use */
-    private String model = "deepseek-v4-flash";
+    private String model = "deepseek-chat";
 
     /** Max tokens for the response */
     private int maxTokens = 1024;
@@ -26,6 +29,6 @@ public class AiConfig {
     /** Conversation TTL in Redis (seconds) */
     private int conversationTtl = 1800;
 
-    /** Anthropic API version */
+    /** Provider API version, retained for compatibility with older configs. */
     private String apiVersion = "2026-06-01";
 }

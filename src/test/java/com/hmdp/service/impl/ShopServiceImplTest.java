@@ -3,7 +3,7 @@ package com.hmdp.service.impl;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
-import com.hmdp.utils.CacheClinet;
+import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -22,6 +21,7 @@ import java.util.function.Function;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -34,7 +34,7 @@ class ShopServiceImplTest {
     @Mock
     private StringRedisTemplate stringRedisTemplate;
     @Mock
-    private CacheClinet cacheClinet;
+    private CacheClient cacheClient;
     @Mock
     private RedissonClient redissonClient;
     @Mock
@@ -44,13 +44,13 @@ class ShopServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        shopService = org.mockito.Mockito.spy(new ShopServiceImpl());
-        ReflectionTestUtils.setField(shopService, "stringRedisTemplate", stringRedisTemplate);
-        ReflectionTestUtils.setField(shopService, "cacheClinet", cacheClinet);
-        ReflectionTestUtils.setField(shopService, "redissonClient", redissonClient);
-        ReflectionTestUtils.setField(shopService, "shopLocalCache", shopLocalCache);
+        shopService = org.mockito.Mockito.spy(new ShopServiceImpl(
+                stringRedisTemplate,
+                cacheClient,
+                redissonClient,
+                shopLocalCache));
 
-        when(redissonClient.<Long>getBloomFilter(RedisConstants.SHOP_ID_BLOOM_FILTER_KEY))
+        lenient().when(redissonClient.<Long>getBloomFilter(RedisConstants.SHOP_ID_BLOOM_FILTER_KEY))
                 .thenReturn(bloomFilter);
     }
 
@@ -65,7 +65,7 @@ class ShopServiceImplTest {
 
         assertThat(result.getSuccess()).isTrue();
         assertThat(result.getData()).isSameAs(shop);
-        verifyNoInteractions(cacheClinet);
+        verifyNoInteractions(cacheClient);
     }
 
     @Test
@@ -74,7 +74,7 @@ class ShopServiceImplTest {
         shop.setId(1L);
         when(bloomFilter.contains(1L)).thenReturn(true);
         when(shopLocalCache.getIfPresent(1L)).thenReturn(null);
-        when(cacheClinet.queryWithPassThrough(
+        when(cacheClient.queryWithPassThrough(
                 eq(RedisConstants.CACHE_SHOP_KEY),
                 eq(1L),
                 eq(Shop.class),

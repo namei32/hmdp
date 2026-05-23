@@ -3,7 +3,6 @@ package com.hmdp.ratelimit.service;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -12,8 +11,11 @@ public class BlacklistService {
     private static final String BLACKLIST_KEY = "rate:limit:blacklist:";
     private static final String VIOLATION_KEY = "rate:limit:violation:";
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    public BlacklistService(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
 
     public boolean isBlocked(String identifier) {
         return Boolean.TRUE.equals(stringRedisTemplate.hasKey(BLACKLIST_KEY + identifier));

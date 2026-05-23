@@ -8,7 +8,8 @@ import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.util.concurrent.ListenableFuture;
+
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Component
@@ -31,14 +32,18 @@ public class BlogLikedEventProducer {
     }
 
     private void doPublish(BlogLikedEvent event) {
-        ListenableFuture<SendResult<String, BlogLikedEvent>> future = kafkaTemplate.send(
+        CompletableFuture<SendResult<String, BlogLikedEvent>> future = kafkaTemplate.send(
                 KafkaTopics.BLOG_LIKED,
                 String.valueOf(event.getBlogId()),
                 event);
-        future.addCallback(
-                result -> log.info("published blog liked event, blogId={},authorId={}, userId={},score={}, action={}",
-                         event.getBlogId(), event.getAuthorId(), event.getUserId(), event.getScore(), event.getAction()),
-                ex -> log.error("failed to publish blog liked event, blogId={},authorId={}, userId={},score={}, action={}",
-                         event.getBlogId(), event.getAuthorId(), event.getUserId(), event.getScore(), event.getAction(), ex));
+        future.whenComplete((result, ex) -> {
+            if (ex == null) {
+                log.info("published blog liked event, blogId={},authorId={}, userId={},score={}, action={}",
+                        event.getBlogId(), event.getAuthorId(), event.getUserId(), event.getScore(), event.getAction());
+                return;
+            }
+            log.error("failed to publish blog liked event, blogId={},authorId={}, userId={},score={}, action={}",
+                    event.getBlogId(), event.getAuthorId(), event.getUserId(), event.getScore(), event.getAction(), ex);
+        });
     }
 }

@@ -4,11 +4,11 @@ import com.hmdp.ratelimit.annotation.RateLimit;
 import com.hmdp.ratelimit.enums.RateLimitAlgorithm;
 import com.hmdp.ratelimit.model.RateLimitDecision;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -16,17 +16,21 @@ import java.util.UUID;
 @Service
 public class RateLimitEngine {
 
-    @Resource(name = "tokenBucketScript")
-    private DefaultRedisScript<Long> tokenBucketScript;
+    private final DefaultRedisScript<Long> tokenBucketScript;
+    private final DefaultRedisScript<Long> slidingWindowScript;
+    private final StringRedisTemplate stringRedisTemplate;
+    private final BlacklistService blacklistService;
 
-    @Resource(name = "slidingWindowScript")
-    private DefaultRedisScript<Long> slidingWindowScript;
-
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
-
-    @Resource
-    private BlacklistService blacklistService;
+    public RateLimitEngine(
+            @Qualifier("tokenBucketScript") DefaultRedisScript<Long> tokenBucketScript,
+            @Qualifier("slidingWindowScript") DefaultRedisScript<Long> slidingWindowScript,
+            StringRedisTemplate stringRedisTemplate,
+            BlacklistService blacklistService) {
+        this.tokenBucketScript = tokenBucketScript;
+        this.slidingWindowScript = slidingWindowScript;
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.blacklistService = blacklistService;
+    }
 
     public RateLimitDecision check(String identifier, RateLimit rateLimit) {
         if (blacklistService.isBlocked(identifier)) {
