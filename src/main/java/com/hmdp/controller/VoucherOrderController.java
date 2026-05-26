@@ -2,6 +2,7 @@ package com.hmdp.controller;
 
 
 import com.hmdp.dto.Result;
+import com.hmdp.ratelimit.annotation.NoRepeatSubmit;
 import com.hmdp.ratelimit.annotation.RateLimit;
 import com.hmdp.service.IVoucherOrderService;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +28,7 @@ public class VoucherOrderController {
     }
 
     @PostMapping("seckill/{id}")
+    @NoRepeatSubmit(key = "'seckill:' + #voucherId", interval = 3, message = "请勿重复点击下单")
     @RateLimit(
             keyPrefix = "seckill:order",
             bucketCapacity = 40,

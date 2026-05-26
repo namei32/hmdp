@@ -7,6 +7,7 @@ import com.hmdp.mapper.VoucherOrderMapper;
 import com.hmdp.messaging.KafkaTopics;
 import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
+import com.hmdp.service.MessageOutboxService;
 import com.hmdp.service.SeckillOrderConsistencyService;
 import com.hmdp.utils.RedisConstants;
 import com.hmdp.utils.RedisIdWorker;
@@ -15,23 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-/**
- * <p>
- * 服务实现类
- * </p>
- *
- * @author 虎哥
- * @since 2021-12-22
- */
 @Slf4j
 @Service
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder>
@@ -47,19 +37,19 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private final ISeckillVoucherService seckillVoucherService;
     private final RedisIdWorker redisIdWorker;
     private final StringRedisTemplate stringRedisTemplate;
-    private final KafkaTemplate<String, VoucherOrder> kafkaTemplate;
+    private final MessageOutboxService messageOutboxService;
     private final SeckillOrderConsistencyService seckillOrderConsistencyService;
 
     public VoucherOrderServiceImpl(
             ISeckillVoucherService seckillVoucherService,
             RedisIdWorker redisIdWorker,
             StringRedisTemplate stringRedisTemplate,
-            KafkaTemplate<String, VoucherOrder> kafkaTemplate,
+            MessageOutboxService messageOutboxService,
             SeckillOrderConsistencyService seckillOrderConsistencyService) {
         this.seckillVoucherService = seckillVoucherService;
         this.redisIdWorker = redisIdWorker;
         this.stringRedisTemplate = stringRedisTemplate;
-        this.kafkaTemplate = kafkaTemplate;
+        this.messageOutboxService = messageOutboxService;
         this.seckillOrderConsistencyService = seckillOrderConsistencyService;
     }
 
@@ -90,31 +80,22 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         voucherOrder.setVoucherId(voucherId);
 
         try {
-            CompletableFuture<SendResult<String, VoucherOrder>> sendFuture =
-                    kafkaTemplate.send(KafkaTopics.SECKILL_ORDER, String.valueOf(orderId), voucherOrder);
-            sendFuture.whenComplete((sendResult, exception) -> {
-                if (exception != null) {
-                    log.error("秒杀订单消息发送失败，准备补偿 Redis 预扣库存: orderId={}", orderId, exception);
-                    compensateAfterSendFailure(voucherId, userId, orderId);
-                    return;
-                }
-                seckillOrderConsistencyService.markSent(orderId);
-                log.info("秒杀订单消息已发送: orderId={}", orderId);
-            });
+            messageOutboxService.enqueue(KafkaTopics.SECKILL_ORDER, String.valueOf(orderId), voucherOrder);
+            log.info("秒杀订单消息已写入 outbox: orderId={}", orderId);
         } catch (RuntimeException e) {
-            log.error("秒杀订单消息发送异常，准备补偿 Redis 预扣库存: orderId={}", orderId, e);
-            compensateAfterSendFailure(voucherId, userId, orderId);
+            log.error("秒杀订单消息写入 outbox 失败，准备补偿 Redis 预扣库存: orderId={}", orderId, e);
+            compensateAfterOutboxFailure(voucherId, userId, orderId);
             return Result.fail("秒杀排队失败，请稍后重试");
         }
 
         return Result.ok(orderId);
     }
 
-    private void compensateAfterSendFailure(Long voucherId, Long userId, Long orderId) {
+    private void compensateAfterOutboxFailure(Long voucherId, Long userId, Long orderId) {
         try {
-            seckillOrderConsistencyService.compensateReservation(voucherId, userId, orderId, "KAFKA_SEND_FAILED");
+            seckillOrderConsistencyService.compensateReservation(voucherId, userId, orderId, "OUTBOX_SAVE_FAILED");
         } catch (RuntimeException compensationFailure) {
-            log.error("秒杀订单消息发送失败后的 Redis 补偿也失败: orderId={}", orderId, compensationFailure);
+            log.error("秒杀订单消息写入 outbox 失败后的 Redis 补偿也失败: orderId={}", orderId, compensationFailure);
         }
     }
 

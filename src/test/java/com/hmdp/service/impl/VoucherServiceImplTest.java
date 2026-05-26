@@ -5,6 +5,10 @@ import com.hmdp.entity.SeckillVoucher;
 import com.hmdp.entity.Voucher;
 import com.hmdp.mapper.VoucherMapper;
 import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.service.validation.SeckillVoucherCreateValidationChain;
+import com.hmdp.service.validation.SeckillVoucherRequiredValidator;
+import com.hmdp.service.validation.SeckillVoucherStockValidator;
+import com.hmdp.service.validation.SeckillVoucherTimeValidator;
 import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,11 +48,16 @@ class VoucherServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        SeckillVoucherCreateValidationChain validationChain = new SeckillVoucherCreateValidationChain(List.of(
+                new SeckillVoucherRequiredValidator(),
+                new SeckillVoucherStockValidator(),
+                new SeckillVoucherTimeValidator()));
         voucherService = org.mockito.Mockito.spy(new VoucherServiceImpl(
                 seckillVoucherService,
                 stringRedisTemplate,
                 cacheClient,
-                voucherListLocalCache));
+                voucherListLocalCache,
+                validationChain));
         ReflectionTestUtils.setField(voucherService, "baseMapper", voucherMapper);
     }
 
@@ -85,6 +94,18 @@ class VoucherServiceImplTest {
         assertThatThrownBy(() -> voucherService.addSeckillVoucher(voucher))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("seckill voucher save failed");
+    }
+
+    @Test
+    void addSeckillVoucher_shouldThrowWhenVoucherArgumentsInvalid() {
+        Voucher voucher = buildVoucher();
+        voucher.setStock(0);
+
+        assertThatThrownBy(() -> voucherService.addSeckillVoucher(voucher))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("invalid seckill voucher arguments");
+
+        verifyNoInteractions(seckillVoucherService);
     }
 
     private Voucher buildVoucher() {

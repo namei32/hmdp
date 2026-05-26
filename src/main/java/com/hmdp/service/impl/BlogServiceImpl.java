@@ -176,7 +176,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         if (!isSuccess) {
             return Result.fail("新增笔记失败");
         }
-        blogEventProducer.publishAfterCommit(new BlogPublishedEvent(
+        blogEventProducer.enqueue(new BlogPublishedEvent(
                 blog.getId(),
                 user.getId(),
                 System.currentTimeMillis()));

@@ -38,12 +38,12 @@ public class BlogLikedEventProducer {
                 event);
         future.whenComplete((result, ex) -> {
             if (ex == null) {
-                log.info("published blog liked event, blogId={},authorId={}, userId={},score={}, action={}",
-                        event.getBlogId(), event.getAuthorId(), event.getUserId(), event.getScore(), event.getAction());
+                log.info("blog liked event sent, blogId={}, userId={}, action={}",
+                        event.getBlogId(), event.getUserId(), event.getAction());
                 return;
             }
-            log.error("failed to publish blog liked event, blogId={},authorId={}, userId={},score={}, action={}",
-                    event.getBlogId(), event.getAuthorId(), event.getUserId(), event.getScore(), event.getAction(), ex);
+            log.warn("blog liked event send failed, skip best-effort event, blogId={}, userId={}, action={}",
+                    event.getBlogId(), event.getUserId(), event.getAction(), ex);
         });
     }
 }

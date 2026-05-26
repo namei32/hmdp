@@ -33,6 +33,8 @@ mybatis-plus:
 hmdp:
   upload:
     image-dir: ${HMDP_IMAGE_UPLOAD_DIR:./data/hmdp/imgs}
+  outbox:
+    publish-fixed-delay: ${HMDP_OUTBOX_PUBLISH_FIXED_DELAY:5000}
   ai:
     enabled: ${HMDP_AI_ENABLED:false}
     api-key: ${HMDP_AI_API_KEY:}

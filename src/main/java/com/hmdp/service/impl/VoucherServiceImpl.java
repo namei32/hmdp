@@ -8,6 +8,7 @@ import com.hmdp.entity.Voucher;
 import com.hmdp.mapper.VoucherMapper;
 import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherService;
+import com.hmdp.service.validation.SeckillVoucherCreateValidationChain;
 import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.RedisConstants;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -32,16 +33,19 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
     private final StringRedisTemplate stringRedisTemplate;
     private final CacheClient cacheClient;
     private final Cache<Long, List<Voucher>> voucherListLocalCache;
+    private final SeckillVoucherCreateValidationChain seckillVoucherCreateValidationChain;
 
     public VoucherServiceImpl(
             ISeckillVoucherService seckillVoucherService,
             StringRedisTemplate stringRedisTemplate,
             CacheClient cacheClient,
-            @Qualifier("voucherListLocalCache") Cache<Long, List<Voucher>> voucherListLocalCache) {
+            @Qualifier("voucherListLocalCache") Cache<Long, List<Voucher>> voucherListLocalCache,
+            SeckillVoucherCreateValidationChain seckillVoucherCreateValidationChain) {
         this.seckillVoucherService = seckillVoucherService;
         this.stringRedisTemplate = stringRedisTemplate;
         this.cacheClient = cacheClient;
         this.voucherListLocalCache = voucherListLocalCache;
+        this.seckillVoucherCreateValidationChain = seckillVoucherCreateValidationChain;
     }
 
     @Override
@@ -87,19 +91,11 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
     @Override
     @Transactional
     public boolean addSeckillVoucher(Voucher voucher) {
-        // Validate input early so the transaction can roll back on failure.
-        if (voucher == null) {
-            throw new RuntimeException("voucher must not be null");
-        }
+        seckillVoucherCreateValidationChain.validate(voucher);
 
         Integer stock = voucher.getStock();
         LocalDateTime beginTime = voucher.getBeginTime();
         LocalDateTime endTime = voucher.getEndTime();
-
-        if (stock == null || stock <= 0 || beginTime == null || endTime == null || endTime.isBefore(beginTime)) {
-            throw new RuntimeException("invalid seckill voucher arguments");
-        }
-
         boolean voucherSaved = save(voucher);
         if (!voucherSaved) {
             throw new RuntimeException("voucher save failed");

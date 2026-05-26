@@ -1,23 +1,14 @@
 package com.hmdp.messaging;
 
 import com.hmdp.event.BlogPublishedEvent;
-import org.junit.jupiter.api.AfterEach;
+import com.hmdp.service.MessageOutboxService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.SendResult;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-import java.util.concurrent.CompletableFuture;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class BlogEventProducerTest {
@@ -25,42 +16,28 @@ class BlogEventProducerTest {
     private BlogEventProducer producer;
 
     @Mock
-    private KafkaTemplate<String, BlogPublishedEvent> kafkaTemplate;
-
-    private CompletableFuture<SendResult<String, BlogPublishedEvent>> sendFuture;
+    private MessageOutboxService messageOutboxService;
 
     @BeforeEach
     void setUp() {
-        producer = new BlogEventProducer(kafkaTemplate);
-        sendFuture = new CompletableFuture<>();
-        doReturn(sendFuture).when(kafkaTemplate).send(anyString(), anyString(), any(BlogPublishedEvent.class));
-    }
-
-    @AfterEach
-    void tearDown() {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.clearSynchronization();
-        }
+        producer = new BlogEventProducer(messageOutboxService);
     }
 
     @Test
-    void publishAfterCommit_shouldSendImmediatelyWithoutTransaction() {
-        producer.publishAfterCommit(new BlogPublishedEvent(1L, 2L, 3L));
-
-        verify(kafkaTemplate).send(KafkaTopics.BLOG_PUBLISHED, "2", new BlogPublishedEvent(1L, 2L, 3L));
-    }
-
-    @Test
-    void publishAfterCommit_shouldDeferSendUntilCommit() {
-        TransactionSynchronizationManager.initSynchronization();
-
+    void enqueue_shouldSaveBlogPublishedEventToOutbox() {
         BlogPublishedEvent event = new BlogPublishedEvent(1L, 2L, 3L);
+
+        producer.enqueue(event);
+
+        verify(messageOutboxService).enqueue(KafkaTopics.BLOG_PUBLISHED, "2", event);
+    }
+
+    @Test
+    void publishAfterCommit_shouldDelegateToOutboxForBackwardCompatibility() {
+        BlogPublishedEvent event = new BlogPublishedEvent(1L, 2L, 3L);
+
         producer.publishAfterCommit(event);
 
-        verifyNoInteractions(kafkaTemplate);
-        for (TransactionSynchronization synchronization : TransactionSynchronizationManager.getSynchronizations()) {
-            synchronization.afterCommit();
-        }
-        verify(kafkaTemplate).send(KafkaTopics.BLOG_PUBLISHED, "2", event);
+        verify(messageOutboxService).enqueue(KafkaTopics.BLOG_PUBLISHED, "2", event);
     }
 }
